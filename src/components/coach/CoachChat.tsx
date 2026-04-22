@@ -365,7 +365,15 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-function Bubble({ role, content }: { role: "user" | "assistant"; content: string }) {
+function Bubble({
+  role,
+  content,
+  isStreaming = false,
+}: {
+  role: "user" | "assistant";
+  content: string;
+  isStreaming?: boolean;
+}) {
   const isUser = role === "user";
   return (
     <div className={cn("flex animate-fade-up", isUser ? "justify-end" : "justify-start")}>
@@ -377,7 +385,17 @@ function Bubble({ role, content }: { role: "user" | "assistant"; content: string
             : "bg-white border border-[color:var(--cream-border)] text-[color:var(--ink)] rounded-[20px] rounded-bl-[4px] shadow-elev-sm",
         )}
       >
-        {content || (
+        {content ? (
+          <>
+            {content}
+            {isStreaming && (
+              <span
+                aria-hidden
+                className="inline-block w-[2px] h-[1em] align-[-2px] ml-0.5 bg-[color:var(--forest)]/70 animate-pulse"
+              />
+            )}
+          </>
+        ) : (
           <span className="inline-flex items-center gap-1 text-[color:var(--forest)]/70">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse [animation-delay:120ms]" />
