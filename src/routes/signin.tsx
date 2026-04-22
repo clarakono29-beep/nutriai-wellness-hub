@@ -62,6 +62,16 @@ function SignInPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [bypassActive, setBypassActive] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const read = () =>
+      setBypassActive(window.localStorage.getItem("dev_bypass_auth") === "1");
+    read();
+    window.addEventListener("storage", read);
+    return () => window.removeEventListener("storage", read);
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
@@ -100,7 +110,35 @@ function SignInPage() {
   };
 
   return (
-    <div className="mobile-shell flex flex-col bg-[color:var(--cream)]">
+    <div className="mobile-shell flex flex-col bg-[color:var(--cream)] relative">
+      {import.meta.env.DEV && (
+        <div
+          className={`fixed bottom-3 right-3 z-50 flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-mono shadow-elev-sm border ${
+            bypassActive
+              ? "bg-[color:var(--coral)] text-white border-transparent"
+              : "bg-white text-[color:var(--ink-mid)] border-[color:var(--cream-border)]"
+          }`}
+          title="Dev: dev_bypass_auth localStorage flag"
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${bypassActive ? "bg-white" : "bg-[color:var(--ink-light)]"}`}
+            aria-hidden
+          />
+          <span>dev_bypass_auth: {bypassActive ? "ON" : "off"}</span>
+          {bypassActive && (
+            <button
+              type="button"
+              onClick={() => {
+                window.localStorage.removeItem("dev_bypass_auth");
+                setBypassActive(false);
+              }}
+              className="ml-1 rounded-full bg-white/25 hover:bg-white/40 transition-colors px-2 py-0.5 text-[10px] font-semibold"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
       <header className="px-6 pt-8 pb-2 flex items-center justify-center">
         <Link to="/" className="flex items-center gap-1.5 text-[color:var(--forest)]">
           <LeafMark size={26} />
