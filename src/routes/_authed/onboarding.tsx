@@ -339,8 +339,16 @@ function Onboarding() {
             onChange={(prefs) => setA({ ...a, diet_preferences: prefs })}
           />
         )}
-        {step >= 9 && step < TOTAL_STEPS && (
-          <PlaceholderStep step={step} onSkip={goNext} />
+        {step === 10 && plan && (
+          <BlueprintStep name={a.name.trim() || "You"} plan={plan} goal={a.goal} target_weight_kg={Number(a.target_weight_kg) || 0} />
+        )}
+        {step === 11 && (
+          <AIDemoStep
+            plan={plan}
+            goal={a.goal}
+            result={demoResult}
+            onResult={setDemoResult}
+          />
         )}
         {step === TOTAL_STEPS && (
           <PlaceholderStep step={step} onSkip={() => {}} final />
