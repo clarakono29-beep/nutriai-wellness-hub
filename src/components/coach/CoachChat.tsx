@@ -401,14 +401,25 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
             placeholder="Ask your coach..."
             className="flex-1 resize-none bg-transparent border-0 outline-none text-[15px] text-[color:var(--ink)] placeholder:text-[color:var(--ink-light)] py-2 px-2 max-h-[120px]"
           />
-          <button
-            onClick={() => send(input)}
-            disabled={!input.trim() || loading}
-            className="h-10 w-10 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-sm disabled:opacity-50 active:scale-95 ease-luxury transition-transform"
-            aria-label="Send"
-          >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-4 w-4" />}
-          </button>
+          {loading ? (
+            <button
+              onClick={stop}
+              className="h-10 w-10 rounded-full bg-[color:var(--ink)] grid place-items-center text-white shadow-elev-sm active:scale-95 ease-luxury transition-transform"
+              aria-label="Stop generating"
+              title="Stop"
+            >
+              <Square className="h-3.5 w-3.5 fill-current" />
+            </button>
+          ) : (
+            <button
+              onClick={() => send(input)}
+              disabled={!input.trim()}
+              className="h-10 w-10 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-sm disabled:opacity-50 active:scale-95 ease-luxury transition-transform"
+              aria-label="Send"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
