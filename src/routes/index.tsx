@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { LeafMark, Wordmark } from "@/components/brand/Logo";
 import { PrimaryButton } from "@/components/ui/luxury/PrimaryButton";
 import { ArrowRight, Star } from "lucide-react";
