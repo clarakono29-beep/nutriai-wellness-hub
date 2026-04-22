@@ -363,15 +363,12 @@ function Onboarding() {
             onResult={setDemoResult}
           />
         )}
-        {step === TOTAL_STEPS && (
-          <PlaceholderStep step={step} onSkip={() => {}} final />
-        )}
       </StepShell>
 
       {/* Sticky CTA */}
       <div className="sticky bottom-0 left-0 right-0 px-6 pt-6 pb-6 bg-gradient-to-t from-[color:var(--cream)] via-[color:var(--cream)] to-transparent">
         <PrimaryButton
-          onClick={step === TOTAL_STEPS ? finalize : goNext}
+          onClick={goNext}
           disabled={!canContinue}
           loading={submitting}
         >
