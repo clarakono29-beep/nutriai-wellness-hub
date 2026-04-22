@@ -26,6 +26,18 @@ const TOTAL_STEPS = 12;
 
 type Direction = 1 | -1;
 
+interface Plan {
+  bmr: number;
+  tdee: number;
+  daily_calories: number;
+  deficit: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fibre_g: number;
+  weeks_to_goal: number;
+}
+
 interface Answers {
   problems: string[];
   goal: Goal | "health" | "";
