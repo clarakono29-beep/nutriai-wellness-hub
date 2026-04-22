@@ -108,11 +108,39 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   const [followups, setFollowups] = useState<string[]>(initialQuickPrompts);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+  const rafScrollRef = useRef<number | null>(null);
+
+  // Track whether the user is near the bottom; if they scroll up, stop pinning.
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 80;
+  };
+
+  // rAF-throttled smooth scroll. Only pin if user hasn't scrolled up.
+  const scheduleScroll = (smooth = true) => {
+    if (rafScrollRef.current !== null) return;
+    rafScrollRef.current = requestAnimationFrame(() => {
+      rafScrollRef.current = null;
+      const el = scrollRef.current;
+      if (!el || !stickToBottomRef.current) return;
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    });
+  };
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+    scheduleScroll(true);
+  }, [messages, loading, streaming]);
+
+  useEffect(() => {
+    return () => {
+      if (rafScrollRef.current !== null) cancelAnimationFrame(rafScrollRef.current);
+    };
+  }, []);
 
   const buildContext = () => {
     const summary =
@@ -140,6 +168,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
     setFollowups([]);
     setInput("");
     setLoading(true);
+    stickToBottomRef.current = true; // a brand-new send always scrolls
 
     try {
       // Send only the last 10 messages for context window control
@@ -171,6 +200,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       }
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      setStreaming(true);
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -208,6 +238,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
                 }
                 return copy;
               });
+              scheduleScroll(true);
             }
           } catch {
             buf = line + "\n" + buf;
@@ -223,6 +254,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       appendAssistant("Network hiccup — try again.");
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   };
 
@@ -265,11 +297,23 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-          {messages.map((m, i) => (
-            <Bubble key={i} role={m.role} content={m.content} />
-          ))}
-          {loading && messages[messages.length - 1]?.role === "user" && (
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-5 py-4 space-y-3"
+        >
+          {messages.map((m, i) => {
+            const isLast = i === messages.length - 1;
+            return (
+              <Bubble
+                key={i}
+                role={m.role}
+                content={m.content}
+                isStreaming={streaming && isLast && m.role === "assistant"}
+              />
+            );
+          })}
+          {loading && !streaming && messages[messages.length - 1]?.role === "user" && (
             <div className="flex items-center gap-2 text-[12px] text-[color:var(--ink-mid)] pl-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> thinking…
             </div>
@@ -321,7 +365,15 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-function Bubble({ role, content }: { role: "user" | "assistant"; content: string }) {
+function Bubble({
+  role,
+  content,
+  isStreaming = false,
+}: {
+  role: "user" | "assistant";
+  content: string;
+  isStreaming?: boolean;
+}) {
   const isUser = role === "user";
   return (
     <div className={cn("flex animate-fade-up", isUser ? "justify-end" : "justify-start")}>
@@ -333,7 +385,17 @@ function Bubble({ role, content }: { role: "user" | "assistant"; content: string
             : "bg-white border border-[color:var(--cream-border)] text-[color:var(--ink)] rounded-[20px] rounded-bl-[4px] shadow-elev-sm",
         )}
       >
-        {content || (
+        {content ? (
+          <>
+            {content}
+            {isStreaming && (
+              <span
+                aria-hidden
+                className="inline-block w-[2px] h-[1em] align-[-2px] ml-0.5 bg-[color:var(--forest)]/70 animate-pulse"
+              />
+            )}
+          </>
+        ) : (
           <span className="inline-flex items-center gap-1 text-[color:var(--forest)]/70">
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
             <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse [animation-delay:120ms]" />
