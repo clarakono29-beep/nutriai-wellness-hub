@@ -14,6 +14,18 @@ interface ChatMessage {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nutrition-coach`;
 
+// Marker appended to a partial assistant message when the user stops generation.
+// Kept in one place so the "Continue" flow can reliably strip it before resuming.
+const STOPPED_SUFFIX = " …(stopped)";
+const STOPPED_PLACEHOLDER = "_(stopped)_";
+const CONTINUE_LABEL = "Continue";
+
+function stripStopMarker(content: string): string {
+  if (content === STOPPED_PLACEHOLDER) return "";
+  if (content.endsWith(STOPPED_SUFFIX)) return content.slice(0, -STOPPED_SUFFIX.length);
+  return content;
+}
+
 function greetingFor(date = new Date()) {
   const h = date.getHours();
   if (h < 12) return "Good morning";
