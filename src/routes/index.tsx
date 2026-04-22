@@ -84,12 +84,15 @@ function Hero() {
           <LeafMark size={26} className="text-[color:var(--gold)]" />
           <Wordmark className="text-white text-[18px]" />
         </div>
-        <Link
-          to="/signin"
-          className="font-body text-[15px] text-[color:var(--sage-light)] hover:text-white transition-colors"
-        >
-          Sign in
-        </Link>
+        <div className="flex items-center gap-3">
+          {import.meta.env.DEV && <DevBypassLink />}
+          <Link
+            to="/signin"
+            className="font-body text-[15px] text-[color:var(--sage-light)] hover:text-white transition-colors"
+          >
+            Sign in
+          </Link>
+        </div>
       </header>
 
       {/* Hero content */}
