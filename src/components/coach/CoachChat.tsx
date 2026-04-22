@@ -14,6 +14,18 @@ interface ChatMessage {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nutrition-coach`;
 
+// Marker appended to a partial assistant message when the user stops generation.
+// Kept in one place so the "Continue" flow can reliably strip it before resuming.
+const STOPPED_SUFFIX = " …(stopped)";
+const STOPPED_PLACEHOLDER = "_(stopped)_";
+const CONTINUE_LABEL = "Continue";
+
+function stripStopMarker(content: string): string {
+  if (content === STOPPED_PLACEHOLDER) return "";
+  if (content.endsWith(STOPPED_SUFFIX)) return content.slice(0, -STOPPED_SUFFIX.length);
+  return content;
+}
+
 function greetingFor(date = new Date()) {
   const h = date.getHours();
   if (h < 12) return "Good morning";
@@ -278,7 +290,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
             const finalized = (last.content || "").trimEnd();
             copy[copy.length - 1] = {
               ...last,
-              content: finalized ? `${finalized} …(stopped)` : "_(stopped)_",
+              content: finalized ? `${finalized}${STOPPED_SUFFIX}` : STOPPED_PLACEHOLDER,
             };
           }
           return copy;
@@ -295,7 +307,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       if (isAbort) {
         // Already handled above (or aborted before any tokens arrived).
         if (!acc) {
-          setMessages((prev) => [...prev, { role: "assistant", content: "_(stopped)_" }]);
+          setMessages((prev) => [...prev, { role: "assistant", content: STOPPED_PLACEHOLDER }]);
         }
       } else {
         console.error(e);
@@ -310,6 +322,172 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
 
   const appendAssistant = (content: string) => {
     setMessages((prev) => [...prev, { role: "assistant", content }]);
+  };
+
+  // Resume streaming into the last assistant bubble after the user pressed Stop.
+  // We send the existing conversation (with the stripped partial) plus a short
+  // user nudge so the model picks up naturally.
+  const continueStream = async () => {
+    if (loading) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "assistant") return;
+
+    const partial = stripStopMarker(last.content);
+
+    // Update the last bubble in place: remove the stop marker, keep the partial text.
+    setMessages((prev) => {
+      const copy = [...prev];
+      const tail = copy[copy.length - 1];
+      if (tail?.role === "assistant") {
+        copy[copy.length - 1] = { ...tail, content: partial };
+      }
+      return copy;
+    });
+
+    haptics.light();
+    setFollowups([]);
+    setLoading(true);
+    setStreaming(true);
+    stickToBottomRef.current = true;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let acc = partial;
+    let aborted = false;
+
+    try {
+      // Build context: full history (with the stripped partial as the last assistant turn)
+      // plus a synthetic user nudge that does NOT get added to the visible chat.
+      const history = messages
+        .slice(-10)
+        .map(({ role, content }, i, arr) =>
+          i === arr.length - 1 && role === "assistant"
+            ? { role, content: partial }
+            : { role, content },
+        );
+      const payloadMessages = [
+        ...history,
+        { role: "user" as const, content: "Please continue from where you left off." },
+      ];
+
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: payloadMessages,
+          user_context: buildContext(),
+        }),
+        signal: controller.signal,
+      });
+
+      if (resp.status === 429) {
+        appendAssistant("I'm getting too many requests right now — try again in a moment.");
+        return;
+      }
+      if (resp.status === 402) {
+        appendAssistant("AI credits are exhausted. Top up in workspace settings to continue.");
+        return;
+      }
+      if (!resp.ok || !resp.body) {
+        appendAssistant("Couldn't resume — please try again.");
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let done = false;
+
+      const onAbort = () => {
+        aborted = true;
+        reader.cancel().catch(() => {});
+      };
+      controller.signal.addEventListener("abort", onAbort);
+
+      try {
+        while (!done) {
+          const { value, done: d } = await reader.read();
+          if (d) break;
+          buf += decoder.decode(value, { stream: true });
+          let idx: number;
+          while ((idx = buf.indexOf("\n")) !== -1) {
+            let line = buf.slice(0, idx);
+            buf = buf.slice(idx + 1);
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (line.startsWith(":") || line.trim() === "") continue;
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            if (payload === "[DONE]") {
+              done = true;
+              break;
+            }
+            try {
+              const parsed = JSON.parse(payload);
+              const delta = parsed.choices?.[0]?.delta?.content as string | undefined;
+              if (delta) {
+                // Add a single space joiner the first time we resume so the
+                // continuation doesn't visually fuse into the previous word.
+                if (acc === partial && partial && !/\s$/.test(partial) && !/^\s/.test(delta)) {
+                  acc += " ";
+                }
+                acc += delta;
+                const snapshot = acc;
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const tail = copy[copy.length - 1];
+                  if (tail?.role === "assistant") {
+                    copy[copy.length - 1] = { ...tail, content: snapshot };
+                  }
+                  return copy;
+                });
+                scheduleScroll(true);
+              }
+            } catch {
+              buf = line + "\n" + buf;
+              break;
+            }
+          }
+        }
+      } finally {
+        controller.signal.removeEventListener("abort", onAbort);
+      }
+
+      if (aborted) {
+        setMessages((prev) => {
+          const copy = [...prev];
+          const tail = copy[copy.length - 1];
+          if (tail?.role === "assistant") {
+            const finalized = (tail.content || "").trimEnd();
+            copy[copy.length - 1] = {
+              ...tail,
+              content: finalized ? `${finalized}${STOPPED_SUFFIX}` : STOPPED_PLACEHOLDER,
+            };
+          }
+          return copy;
+        });
+        setFollowups([CONTINUE_LABEL, "Try a different question", "Start over"]);
+      } else {
+        setFollowups(followupsFor(acc));
+      }
+    } catch (e: unknown) {
+      const isAbort =
+        (e instanceof DOMException && e.name === "AbortError") ||
+        (typeof e === "object" &&
+          e !== null &&
+          "name" in e &&
+          (e as { name?: string }).name === "AbortError");
+      if (!isAbort) {
+        console.error(e);
+        appendAssistant("Network hiccup — try again.");
+      }
+    } finally {
+      abortRef.current = null;
+      setLoading(false);
+      setStreaming(false);
+    }
   };
 
   const showQuickPrompts = messages.length === 1 && !loading;
@@ -376,7 +554,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
             {chips.map((p) => (
               <button
                 key={p}
-                onClick={() => send(p)}
+                onClick={() => (p === CONTINUE_LABEL ? continueStream() : send(p))}
                 disabled={loading}
                 className="shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full bg-white border border-[color:var(--cream-border)] text-[12px] text-[color:var(--ink-mid)] hover:border-[color:var(--forest)] hover:text-[color:var(--forest)] transition-colors disabled:opacity-50"
               >
