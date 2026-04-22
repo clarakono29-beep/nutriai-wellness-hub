@@ -144,6 +144,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     return () => {
       if (rafScrollRef.current !== null) cancelAnimationFrame(rafScrollRef.current);
+      abortRef.current?.abort();
     };
   }, []);
 
