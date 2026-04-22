@@ -116,6 +116,22 @@ function SignInPage() {
           Sign in to continue your transformation.
         </p>
 
+        {import.meta.env.DEV && (
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem("dev_bypass_auth", "1");
+                window.location.assign("/app");
+              }
+            }}
+            className="mt-6 w-full h-11 rounded-full bg-[color:var(--coral)] text-white text-[13px] font-semibold shadow-elev-sm active:scale-[0.97] transition-transform"
+            title="Dev only: skip auth and enter the app"
+          >
+            ⚠️ Dev: Skip auth and enter app →
+          </button>
+        )}
+
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <TextField
             label="Email"
