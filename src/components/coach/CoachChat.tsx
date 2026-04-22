@@ -176,6 +176,11 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
     setLoading(true);
     stickToBottomRef.current = true; // a brand-new send always scrolls
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let acc = "";
+    let aborted = false;
+
     try {
       // Send only the last 10 messages for context window control
       const trimmed = next.slice(-10).map(({ role, content }) => ({ role, content }));
@@ -190,6 +195,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
           messages: trimmed,
           user_context: buildContext(),
         }),
+        signal: controller.signal,
       });
 
       if (resp.status === 429) {
@@ -212,53 +218,91 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       const decoder = new TextDecoder();
       let buf = "";
       let done = false;
-      let acc = "";
 
-      while (!done) {
-        const { value, done: d } = await reader.read();
-        if (d) break;
-        buf += decoder.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, idx);
-          buf = buf.slice(idx + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (payload === "[DONE]") {
-            done = true;
-            break;
-          }
-          try {
-            const parsed = JSON.parse(payload);
-            const delta = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (delta) {
-              acc += delta;
-              const snapshot = acc;
-              setMessages((prev) => {
-                const copy = [...prev];
-                const last = copy[copy.length - 1];
-                if (last?.role === "assistant") {
-                  copy[copy.length - 1] = { ...last, content: snapshot };
-                }
-                return copy;
-              });
-              scheduleScroll(true);
+      // When aborted mid-stream, cancel the reader so the loop exits promptly.
+      const onAbort = () => {
+        aborted = true;
+        reader.cancel().catch(() => {});
+      };
+      controller.signal.addEventListener("abort", onAbort);
+
+      try {
+        while (!done) {
+          const { value, done: d } = await reader.read();
+          if (d) break;
+          buf += decoder.decode(value, { stream: true });
+          let idx: number;
+          while ((idx = buf.indexOf("\n")) !== -1) {
+            let line = buf.slice(0, idx);
+            buf = buf.slice(idx + 1);
+            if (line.endsWith("\r")) line = line.slice(0, -1);
+            if (line.startsWith(":") || line.trim() === "") continue;
+            if (!line.startsWith("data: ")) continue;
+            const payload = line.slice(6).trim();
+            if (payload === "[DONE]") {
+              done = true;
+              break;
             }
-          } catch {
-            buf = line + "\n" + buf;
-            break;
+            try {
+              const parsed = JSON.parse(payload);
+              const delta = parsed.choices?.[0]?.delta?.content as string | undefined;
+              if (delta) {
+                acc += delta;
+                const snapshot = acc;
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const last = copy[copy.length - 1];
+                  if (last?.role === "assistant") {
+                    copy[copy.length - 1] = { ...last, content: snapshot };
+                  }
+                  return copy;
+                });
+                scheduleScroll(true);
+              }
+            } catch {
+              buf = line + "\n" + buf;
+              break;
+            }
           }
         }
+      } finally {
+        controller.signal.removeEventListener("abort", onAbort);
       }
 
-      // After streaming completes, set context-aware follow-up chips
-      setFollowups(followupsFor(acc));
-    } catch (e) {
-      console.error(e);
-      appendAssistant("Network hiccup — try again.");
+      // If the user stopped the stream, finalize the partial message with a marker.
+      if (aborted) {
+        setMessages((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.role === "assistant") {
+            const finalized = (last.content || "").trimEnd();
+            copy[copy.length - 1] = {
+              ...last,
+              content: finalized ? `${finalized} …(stopped)` : "_(stopped)_",
+            };
+          }
+          return copy;
+        });
+        setFollowups(["Continue", "Try a different question", "Start over"]);
+      } else {
+        // After streaming completes normally, set context-aware follow-up chips
+        setFollowups(followupsFor(acc));
+      }
+    } catch (e: unknown) {
+      const isAbort =
+        (e instanceof DOMException && e.name === "AbortError") ||
+        (typeof e === "object" && e !== null && "name" in e && (e as { name?: string }).name === "AbortError");
+      if (isAbort) {
+        // Already handled above (or aborted before any tokens arrived).
+        if (!acc) {
+          setMessages((prev) => [...prev, { role: "assistant", content: "_(stopped)_" }]);
+        }
+      } else {
+        console.error(e);
+        appendAssistant("Network hiccup — try again.");
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
       setStreaming(false);
     }
