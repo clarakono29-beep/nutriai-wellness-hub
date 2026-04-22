@@ -46,9 +46,10 @@ function Diary() {
   const { profile } = useProfile();
   const { logs, totals, addLog, removeLog } = useFoodLog();
   const { analyseMeal, loading: aiLoading } = useAI();
+  const { streak, milestone, clearMilestone, recordDailyActivity } = useStreak();
+  const { shouldShowPrompt, requestPermission, dismissPrompt } = useNotifications();
 
   const [waterGlasses, setWaterGlasses] = useState(0);
-  const [streak, setStreak] = useState(0);
   const [text, setText] = useState("");
   const [preview, setPreview] = useState<MealAnalysis | null>(null);
   const [confirmMealType, setConfirmMealType] = useState<MealType>(inferMeal());
