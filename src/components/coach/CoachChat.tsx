@@ -278,7 +278,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
             const finalized = (last.content || "").trimEnd();
             copy[copy.length - 1] = {
               ...last,
-              content: finalized ? `${finalized} …(stopped)` : "_(stopped)_",
+              content: finalized ? `${finalized}${STOPPED_SUFFIX}` : STOPPED_PLACEHOLDER,
             };
           }
           return copy;
