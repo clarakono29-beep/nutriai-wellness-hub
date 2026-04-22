@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthedOnboardingRouteImport } from './routes/_authed/onboarding'
 import { Route as AuthedAppRouteImport } from './routes/_authed/app'
 import { Route as AuthedAppIndexRouteImport } from './routes/_authed/app.index'
+import { Route as AuthedAppRecipesRouteImport } from './routes/_authed/app.recipes'
 import { Route as AuthedAppProgressRouteImport } from './routes/_authed/app.progress'
 import { Route as AuthedAppProgramsRouteImport } from './routes/_authed/app.programs'
 import { Route as AuthedAppProfileRouteImport } from './routes/_authed/app.profile'
@@ -55,6 +56,11 @@ const AuthedAppIndexRoute = AuthedAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedAppRoute,
 } as any)
+const AuthedAppRecipesRoute = AuthedAppRecipesRouteImport.update({
+  id: '/recipes',
+  path: '/recipes',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
 const AuthedAppProgressRoute = AuthedAppProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AuthedAppProfileRoute
   '/app/programs': typeof AuthedAppProgramsRoute
   '/app/progress': typeof AuthedAppProgressRoute
+  '/app/recipes': typeof AuthedAppRecipesRoute
   '/app/': typeof AuthedAppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AuthedAppProfileRoute
   '/app/programs': typeof AuthedAppProgramsRoute
   '/app/progress': typeof AuthedAppProgressRoute
+  '/app/recipes': typeof AuthedAppRecipesRoute
   '/app': typeof AuthedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/_authed/app/profile': typeof AuthedAppProfileRoute
   '/_authed/app/programs': typeof AuthedAppProgramsRoute
   '/_authed/app/progress': typeof AuthedAppProgressRoute
+  '/_authed/app/recipes': typeof AuthedAppRecipesRoute
   '/_authed/app/': typeof AuthedAppIndexRoute
 }
 export interface FileRouteTypes {
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/programs'
     | '/app/progress'
+    | '/app/recipes'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/programs'
     | '/app/progress'
+    | '/app/recipes'
     | '/app'
   id:
     | '__root__'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/_authed/app/profile'
     | '/_authed/app/programs'
     | '/_authed/app/progress'
+    | '/_authed/app/recipes'
     | '/_authed/app/'
   fileRoutesById: FileRoutesById
 }
@@ -210,6 +222,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedAppIndexRouteImport
       parentRoute: typeof AuthedAppRoute
     }
+    '/_authed/app/recipes': {
+      id: '/_authed/app/recipes'
+      path: '/recipes'
+      fullPath: '/app/recipes'
+      preLoaderRoute: typeof AuthedAppRecipesRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
     '/_authed/app/progress': {
       id: '/_authed/app/progress'
       path: '/progress'
@@ -246,6 +265,7 @@ interface AuthedAppRouteChildren {
   AuthedAppProfileRoute: typeof AuthedAppProfileRoute
   AuthedAppProgramsRoute: typeof AuthedAppProgramsRoute
   AuthedAppProgressRoute: typeof AuthedAppProgressRoute
+  AuthedAppRecipesRoute: typeof AuthedAppRecipesRoute
   AuthedAppIndexRoute: typeof AuthedAppIndexRoute
 }
 
@@ -254,6 +274,7 @@ const AuthedAppRouteChildren: AuthedAppRouteChildren = {
   AuthedAppProfileRoute: AuthedAppProfileRoute,
   AuthedAppProgramsRoute: AuthedAppProgramsRoute,
   AuthedAppProgressRoute: AuthedAppProgressRoute,
+  AuthedAppRecipesRoute: AuthedAppRecipesRoute,
   AuthedAppIndexRoute: AuthedAppIndexRoute,
 }
 
@@ -283,3 +304,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
