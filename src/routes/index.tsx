@@ -6,17 +6,50 @@ import { ArrowRight, Star } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NutriAI — Eat smarter. Live longer." },
+      { title: "NutriAI — AI Nutrition Tracking & Calorie Counter" },
       {
         name: "description",
         content:
-          "AI-powered nutrition that learns your body, not just your calories. Personalised macros, instant meal scoring, longevity-first.",
+          "The world's most intelligent nutrition app. AI-powered calorie counting, personalised meal plans, and macro tracking. Join 3.4M users transforming their health.",
       },
-      { property: "og:title", content: "NutriAI — Eat smarter. Live longer." },
+      {
+        name: "keywords",
+        content:
+          "calorie counter, nutrition tracker, AI food log, macro tracking, meal planning, weight loss app",
+      },
+      { property: "og:title", content: "NutriAI — AI Nutrition Tracking & Calorie Counter" },
       {
         property: "og:description",
         content:
-          "AI-powered nutrition that learns your body, not just your calories.",
+          "AI-powered calorie counting and macro tracking. Describe your meal in plain English — we handle the rest.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "/icon-512.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/icon-512.png" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "NutriAI",
+          description:
+            "AI-powered nutrition tracking that learns your body. Personalised macros, instant meal scoring, longevity-first.",
+          applicationCategory: "HealthApplication",
+          operatingSystem: "iOS, Android, Web",
+          offers: {
+            "@type": "Offer",
+            price: "9.99",
+            priceCurrency: "USD",
+          },
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.9",
+            ratingCount: "148000",
+          },
+        }),
       },
     ],
   }),
