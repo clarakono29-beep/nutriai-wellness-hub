@@ -135,6 +135,8 @@ function Onboarding() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<Direction>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [demoResult, setDemoResult] = useState<MealAnalysis | null>(null);
 
   const [a, setA] = useState<Answers>({
     problems: [],
