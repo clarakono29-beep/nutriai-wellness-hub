@@ -554,7 +554,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
             {chips.map((p) => (
               <button
                 key={p}
-                onClick={() => send(p)}
+                onClick={() => (p === CONTINUE_LABEL ? continueStream() : send(p))}
                 disabled={loading}
                 className="shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full bg-white border border-[color:var(--cream-border)] text-[12px] text-[color:var(--ink-mid)] hover:border-[color:var(--forest)] hover:text-[color:var(--forest)] transition-colors disabled:opacity-50"
               >
