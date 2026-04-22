@@ -58,7 +58,8 @@ function Diary() {
   const [confirmMealType, setConfirmMealType] = useState<MealType>(inferMeal());
   const [confirmName, setConfirmName] = useState("");
   const [servings, setServings] = useState(1);
-  const [confirmSubmitting, setConfirmSubmitting] = useState(false);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const goalCelebratedRef = useRef(false);
 
   // Load water for today
   useEffect(() => {
