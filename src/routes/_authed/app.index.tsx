@@ -80,6 +80,19 @@ function Diary() {
   const remaining = Math.max(0, target - totals.calories);
   const ringPct = Math.min(100, (totals.calories / target) * 100);
 
+  // Celebrate when daily calorie goal is first reached today
+  useEffect(() => {
+    if (totals.calories >= target && target > 0 && !goalCelebratedRef.current) {
+      goalCelebratedRef.current = true;
+      setConfettiTrigger((n) => n + 1);
+      haptics.goal();
+    }
+    if (totals.calories < target * 0.95) {
+      // allow celebrating again after a reset (e.g. day rollover, deletes)
+      goalCelebratedRef.current = false;
+    }
+  }, [totals.calories, target]);
+
   const recents = useMemo(() => {
     const seen = new Set<string>();
     const out: FoodLog[] = [];
