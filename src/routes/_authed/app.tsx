@@ -1,5 +1,5 @@
-import { createFileRoute, Outlet, Link, redirect, useLocation } from "@tanstack/react-router";
-import { Home, Utensils, TrendingUp, BookOpen, User } from "lucide-react";
+import { createFileRoute, Outlet, Link, redirect, useLocation, useNavigate } from "@tanstack/react-router";
+import { BookOpen, ChefHat, NotebookPen, Plus, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +10,6 @@ export const Route = createFileRoute("/_authed/app")({
       throw redirect({ to: "/signin", search: { redirect: location.href } });
     }
     const userId = data.session.user.id;
-    // Check onboarding completion
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_completed")
@@ -19,7 +18,6 @@ export const Route = createFileRoute("/_authed/app")({
     if (profile && !profile.onboarding_completed) {
       throw redirect({ to: "/onboarding" });
     }
-    // Check active subscription
     const { data: sub } = await supabase
       .from("subscriptions")
       .select("status, current_period_end")
@@ -39,48 +37,71 @@ export const Route = createFileRoute("/_authed/app")({
 });
 
 interface Tab {
-  to: "/app" | "/app/log" | "/app/progress" | "/app/programs" | "/app/profile";
+  to: "/app" | "/app/progress" | "/app/programs" | "/app/recipes";
   label: string;
-  icon: typeof Home;
+  icon: typeof NotebookPen;
+  emoji: string;
   exact?: boolean;
 }
 
-const tabs: Tab[] = [
-  { to: "/app", label: "Home", icon: Home, exact: true },
-  { to: "/app/log", label: "Log", icon: Utensils },
-  { to: "/app/progress", label: "Progress", icon: TrendingUp },
-  { to: "/app/programs", label: "Programs", icon: BookOpen },
-  { to: "/app/profile", label: "Profile", icon: User },
+const leftTabs: Tab[] = [
+  { to: "/app", label: "Diary", icon: NotebookPen, emoji: "📓", exact: true },
+  { to: "/app/progress", label: "Progress", icon: TrendingUp, emoji: "📊" },
+];
+const rightTabs: Tab[] = [
+  { to: "/app/programs", label: "Programs", icon: BookOpen, emoji: "🎯" },
+  { to: "/app/recipes", label: "Recipes", icon: ChefHat, emoji: "🍽️" },
 ];
 
 function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname.replace(/\/$/, "");
 
+  const isActive = (t: Tab) =>
+    t.exact ? path === "/app" : path === t.to || path.startsWith(t.to + "/");
+
   return (
-    <div className="mobile-shell pb-24 bg-[color:var(--cream)]">
+    <div className="mobile-shell pb-[110px] bg-[color:var(--cream)]">
       <Outlet />
 
       {/* Tab bar */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40">
-        <div className="mx-3 mb-3 rounded-[24px] bg-white/95 backdrop-blur-xl border border-[color:var(--cream-border)] shadow-elev-md">
-          <ul className="flex items-stretch justify-between px-2 py-2">
-            {tabs.map((t) => {
-              const isActive = t.exact
-                ? path === "/app"
-                : path === t.to || path.startsWith(t.to + "/");
+      <nav
+        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="relative bg-white/85 backdrop-blur-xl border-t border-[color:var(--cream-border)]">
+          {/* Floating center add button */}
+          <button
+            onClick={() => navigate({ to: "/app/log" })}
+            aria-label="Quick log meal"
+            className="absolute left-1/2 -translate-x-1/2 -top-7 h-14 w-14 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-cta active:scale-95 transition-transform ease-luxury z-10"
+          >
+            <Plus className="h-6 w-6" strokeWidth={2.6} />
+          </button>
+
+          <ul className="grid grid-cols-5 items-end h-[72px] px-2">
+            {[...leftTabs, null, ...rightTabs].map((t, i) => {
+              if (!t) {
+                // Spacer cell where the floating button sits
+                return <li key="center-spacer" aria-hidden="true" />;
+              }
+              const active = isActive(t);
               const Icon = t.icon;
               return (
-                <li key={t.to} className="flex-1">
+                <li key={t.to} className="flex justify-center">
                   <Link
                     to={t.to}
                     className={cn(
-                      "flex flex-col items-center justify-center gap-1 py-2 rounded-[16px] transition-all ease-luxury",
-                      isActive ? "text-[color:var(--forest)]" : "text-[color:var(--ink-light)]",
+                      "relative flex flex-col items-center justify-center gap-0.5 py-2 w-full transition-colors ease-luxury",
+                      active ? "text-[color:var(--forest)]" : "text-[color:var(--ink-light)]",
                     )}
                   >
-                    <Icon className={cn("h-[22px] w-[22px]", isActive && "stroke-[2.4]")} />
-                    <span className="text-[10px] uppercase tracking-widest font-semibold">
+                    {active && (
+                      <span className="absolute top-0.5 h-1 w-1 rounded-full bg-[color:var(--forest)]" />
+                    )}
+                    <Icon className={cn("h-6 w-6", active && "stroke-[2.4]")} />
+                    <span className="text-[10px] font-medium tracking-wide">
                       {t.label}
                     </span>
                   </Link>
