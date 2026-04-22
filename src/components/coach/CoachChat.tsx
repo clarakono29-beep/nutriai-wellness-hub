@@ -121,6 +121,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
+  const [continueError, setContinueError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const rafScrollRef = useRef<number | null>(null);
