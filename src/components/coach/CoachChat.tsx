@@ -307,7 +307,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       if (isAbort) {
         // Already handled above (or aborted before any tokens arrived).
         if (!acc) {
-          setMessages((prev) => [...prev, { role: "assistant", content: "_(stopped)_" }]);
+          setMessages((prev) => [...prev, { role: "assistant", content: STOPPED_PLACEHOLDER }]);
         }
       } else {
         console.error(e);
