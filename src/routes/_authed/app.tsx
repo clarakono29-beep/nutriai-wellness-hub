@@ -73,6 +73,7 @@ function AppLayout() {
 
   return (
     <div className="mobile-shell pb-[110px] bg-[color:var(--cream)]">
+      <DevBypassBanner />
       <PageTransition>
         <Outlet />
       </PageTransition>
