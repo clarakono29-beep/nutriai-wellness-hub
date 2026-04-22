@@ -71,9 +71,31 @@ function AppLayout() {
   const isActive = (t: Tab) =>
     t.exact ? path === "/app" : path === t.to || path.startsWith(t.to + "/");
 
+  const devBypass =
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    window.localStorage.getItem("dev_bypass_auth") === "1";
+
   return (
     <div className="mobile-shell pb-[110px] bg-[color:var(--cream)]">
-      <DevBypassBanner />
+      {devBypass && (
+        <div className="sticky top-0 z-50 flex items-center justify-between gap-3 px-4 py-2 bg-[color:var(--coral)] text-white text-[12px] font-medium shadow-elev-sm">
+          <span className="flex items-center gap-2">
+            <span aria-hidden>⚠️</span>
+            Dev auth bypass is ON — data will not load (RLS).
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              window.localStorage.removeItem("dev_bypass_auth");
+              window.location.assign("/signin");
+            }}
+            className="shrink-0 rounded-full bg-white/20 hover:bg-white/30 transition-colors px-3 py-1 text-[11px] font-semibold"
+          >
+            Disable
+          </button>
+        </div>
+      )}
       <PageTransition>
         <Outlet />
       </PageTransition>
