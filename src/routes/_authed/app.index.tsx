@@ -11,6 +11,7 @@ import { todayISO, fmtKcal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { Pill } from "@/components/ui/luxury/Pill";
+import { CoachChat } from "@/components/coach/CoachChat";
 import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/app/")({
@@ -336,6 +337,9 @@ function Diary() {
           onClose={closeModal}
         />
       )}
+
+      {/* Floating AI nutrition coach */}
+      <CoachChat />
     </div>
   );
 }
