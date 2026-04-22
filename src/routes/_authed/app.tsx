@@ -7,6 +7,14 @@ import { haptics } from "@/lib/haptics";
 
 export const Route = createFileRoute("/_authed/app")({
   beforeLoad: async ({ location }) => {
+    // DEV BYPASS: skip auth/onboarding/subscription gates when flag is set.
+    if (
+      import.meta.env.DEV &&
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("dev_bypass_auth") === "1"
+    ) {
+      return;
+    }
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({ to: "/signin", search: { redirect: location.href } });
