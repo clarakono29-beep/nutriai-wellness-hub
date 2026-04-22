@@ -14,6 +14,12 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthedOnboardingRouteImport } from './routes/_authed/onboarding'
+import { Route as AuthedAppRouteImport } from './routes/_authed/app'
+import { Route as AuthedAppIndexRouteImport } from './routes/_authed/app.index'
+import { Route as AuthedAppProgressRouteImport } from './routes/_authed/app.progress'
+import { Route as AuthedAppProgramsRouteImport } from './routes/_authed/app.programs'
+import { Route as AuthedAppProfileRouteImport } from './routes/_authed/app.profile'
+import { Route as AuthedAppLogRouteImport } from './routes/_authed/app.log'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -39,18 +45,59 @@ const AuthedOnboardingRoute = AuthedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedAppRoute = AuthedAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAppIndexRoute = AuthedAppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
+const AuthedAppProgressRoute = AuthedAppProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
+const AuthedAppProgramsRoute = AuthedAppProgramsRouteImport.update({
+  id: '/programs',
+  path: '/programs',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
+const AuthedAppProfileRoute = AuthedAppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
+const AuthedAppLogRoute = AuthedAppLogRouteImport.update({
+  id: '/log',
+  path: '/log',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/app': typeof AuthedAppRouteWithChildren
   '/onboarding': typeof AuthedOnboardingRoute
+  '/app/log': typeof AuthedAppLogRoute
+  '/app/profile': typeof AuthedAppProfileRoute
+  '/app/programs': typeof AuthedAppProgramsRoute
+  '/app/progress': typeof AuthedAppProgressRoute
+  '/app/': typeof AuthedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/onboarding': typeof AuthedOnboardingRoute
+  '/app/log': typeof AuthedAppLogRoute
+  '/app/profile': typeof AuthedAppProfileRoute
+  '/app/programs': typeof AuthedAppProgramsRoute
+  '/app/progress': typeof AuthedAppProgressRoute
+  '/app': typeof AuthedAppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +105,51 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/_authed/app': typeof AuthedAppRouteWithChildren
   '/_authed/onboarding': typeof AuthedOnboardingRoute
+  '/_authed/app/log': typeof AuthedAppLogRoute
+  '/_authed/app/profile': typeof AuthedAppProfileRoute
+  '/_authed/app/programs': typeof AuthedAppProgramsRoute
+  '/_authed/app/progress': typeof AuthedAppProgressRoute
+  '/_authed/app/': typeof AuthedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/pricing' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/pricing'
+    | '/app'
+    | '/onboarding'
+    | '/app/log'
+    | '/app/profile'
+    | '/app/programs'
+    | '/app/progress'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/pricing' | '/onboarding'
+  to:
+    | '/'
+    | '/auth'
+    | '/pricing'
+    | '/onboarding'
+    | '/app/log'
+    | '/app/profile'
+    | '/app/programs'
+    | '/app/progress'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/_authed'
     | '/auth'
     | '/pricing'
+    | '/_authed/app'
     | '/_authed/onboarding'
+    | '/_authed/app/log'
+    | '/_authed/app/profile'
+    | '/_authed/app/programs'
+    | '/_authed/app/progress'
+    | '/_authed/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,14 +196,78 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedOnboardingRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/app': {
+      id: '/_authed/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AuthedAppRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/app/': {
+      id: '/_authed/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AuthedAppIndexRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
+    '/_authed/app/progress': {
+      id: '/_authed/app/progress'
+      path: '/progress'
+      fullPath: '/app/progress'
+      preLoaderRoute: typeof AuthedAppProgressRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
+    '/_authed/app/programs': {
+      id: '/_authed/app/programs'
+      path: '/programs'
+      fullPath: '/app/programs'
+      preLoaderRoute: typeof AuthedAppProgramsRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
+    '/_authed/app/profile': {
+      id: '/_authed/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AuthedAppProfileRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
+    '/_authed/app/log': {
+      id: '/_authed/app/log'
+      path: '/log'
+      fullPath: '/app/log'
+      preLoaderRoute: typeof AuthedAppLogRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
   }
 }
 
+interface AuthedAppRouteChildren {
+  AuthedAppLogRoute: typeof AuthedAppLogRoute
+  AuthedAppProfileRoute: typeof AuthedAppProfileRoute
+  AuthedAppProgramsRoute: typeof AuthedAppProgramsRoute
+  AuthedAppProgressRoute: typeof AuthedAppProgressRoute
+  AuthedAppIndexRoute: typeof AuthedAppIndexRoute
+}
+
+const AuthedAppRouteChildren: AuthedAppRouteChildren = {
+  AuthedAppLogRoute: AuthedAppLogRoute,
+  AuthedAppProfileRoute: AuthedAppProfileRoute,
+  AuthedAppProgramsRoute: AuthedAppProgramsRoute,
+  AuthedAppProgressRoute: AuthedAppProgressRoute,
+  AuthedAppIndexRoute: AuthedAppIndexRoute,
+}
+
+const AuthedAppRouteWithChildren = AuthedAppRoute._addFileChildren(
+  AuthedAppRouteChildren,
+)
+
 interface AuthedRouteChildren {
+  AuthedAppRoute: typeof AuthedAppRouteWithChildren
   AuthedOnboardingRoute: typeof AuthedOnboardingRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedAppRoute: AuthedAppRouteWithChildren,
   AuthedOnboardingRoute: AuthedOnboardingRoute,
 }
 
