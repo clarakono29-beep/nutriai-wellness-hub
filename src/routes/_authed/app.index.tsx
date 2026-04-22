@@ -1,17 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useProfile } from "@/hooks/useProfile";
 import { useFoodLog, type FoodLog } from "@/hooks/useFoodLog";
 import { useAI, type MealAnalysis } from "@/hooks/useAI";
+import { useStreak } from "@/hooks/useStreak";
+import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { todayISO, fmtKcal } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { evaluateAchievements } from "@/lib/achievements";
 
 import { Pill } from "@/components/ui/luxury/Pill";
 import { CoachChat } from "@/components/coach/CoachChat";
+import { StreakMilestoneModal } from "@/components/gamification/StreakMilestoneModal";
+import { NotificationPrompt } from "@/components/gamification/NotificationPrompt";
 import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/app/")({
@@ -41,9 +46,10 @@ function Diary() {
   const { profile } = useProfile();
   const { logs, totals, addLog, removeLog } = useFoodLog();
   const { analyseMeal, loading: aiLoading } = useAI();
+  const { streak, milestone, clearMilestone, recordDailyActivity } = useStreak();
+  const { shouldShowPrompt, requestPermission, dismissPrompt } = useNotifications();
 
   const [waterGlasses, setWaterGlasses] = useState(0);
-  const [streak, setStreak] = useState(0);
   const [text, setText] = useState("");
   const [preview, setPreview] = useState<MealAnalysis | null>(null);
   const [confirmMealType, setConfirmMealType] = useState<MealType>(inferMeal());
@@ -51,7 +57,7 @@ function Diary() {
   const [servings, setServings] = useState(1);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
 
-  // Load water + streak
+  // Load water for today
   useEffect(() => {
     if (!user) return;
     supabase
@@ -63,12 +69,6 @@ function Diary() {
         const total = (data ?? []).reduce((s, w) => s + w.amount_ml, 0);
         setWaterGlasses(Math.round(total / GLASS_ML));
       });
-    supabase
-      .from("streaks")
-      .select("current_streak")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setStreak(data?.current_streak ?? 0));
   }, [user]);
 
   const target = profile?.daily_calories ?? 2000;
@@ -166,6 +166,12 @@ function Diary() {
     toast.success(`${preview.emoji} ${confirmName} — ${fmtKcal(preview.calories * mult)} kcal added`);
     setText("");
     closeModal();
+    // Update streak + check achievements
+    await recordDailyActivity();
+    evaluateAchievements({
+      totalLogs: logs.length + 1,
+      currentStreak: streak.current_streak + 1,
+    });
   };
 
   const relog = async (l: FoodLog) => {
@@ -194,10 +200,38 @@ function Diary() {
           </h1>
           <p className="text-[13px] text-[color:var(--ink-mid)] mt-1">{fmtDateLong()}</p>
         </div>
-        <Pill tone="gold" className="border border-[color:var(--gold)]/30">
-          <Flame className="h-3 w-3" /> {streak} day streak
-        </Pill>
+        <div className="flex items-center gap-2">
+          <Pill tone="gold" className="border border-[color:var(--gold)]/30">
+            <Flame className="h-3 w-3" /> {streak.current_streak} day streak
+          </Pill>
+          <Link
+            to="/app/profile"
+            aria-label="Open profile"
+            className="h-10 w-10 rounded-full bg-[color:var(--forest)] text-white grid place-items-center font-display font-semibold text-[13px] shadow-elev-sm active:scale-95 ease-luxury transition-transform"
+          >
+            {(profile?.name ?? user?.email ?? "U")
+              .split(/[\s@.]/)
+              .filter(Boolean)
+              .map((s) => s[0])
+              .slice(0, 2)
+              .join("")
+              .toUpperCase()}
+          </Link>
+        </div>
       </div>
+
+      {shouldShowPrompt && (
+        <div className="mt-4">
+          <NotificationPrompt
+            onAllow={async () => {
+              const r = await requestPermission();
+              if (r === "granted") toast.success("Reminders enabled.");
+              dismissPrompt();
+            }}
+            onDismiss={dismissPrompt}
+          />
+        </div>
+      )}
 
       {/* Calorie ring card */}
       <div className="mt-5 rounded-[28px] bg-white shadow-elev-sm border border-[color:var(--cream-border)] p-7 flex flex-col items-center">
@@ -340,6 +374,11 @@ function Diary() {
 
       {/* Floating AI nutrition coach */}
       <CoachChat />
+
+      {/* Streak milestone celebration */}
+      {milestone && (
+        <StreakMilestoneModal milestone={milestone} onClose={clearMilestone} />
+      )}
     </div>
   );
 }
