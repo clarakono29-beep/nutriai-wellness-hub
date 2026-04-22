@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Brain, Send, X, Loader2, Sparkles } from "lucide-react";
+import { Brain, Send, X, Loader2, Sparkles, Square } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useFoodLog } from "@/hooks/useFoodLog";
 import { useStreak } from "@/hooks/useStreak";
