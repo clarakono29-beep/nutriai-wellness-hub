@@ -52,8 +52,7 @@ function Hero() {
           <Wordmark className="text-white text-[18px]" />
         </div>
         <Link
-          to="/auth"
-          search={{ mode: "signin" }}
+          to="/signin"
           className="font-body text-[15px] text-[color:var(--sage-light)] hover:text-white transition-colors"
         >
           Sign in

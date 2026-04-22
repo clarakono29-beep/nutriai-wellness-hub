@@ -4,19 +4,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authed/app")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
-      throw redirect({ to: "/auth", search: { mode: "signin" as const } });
+      throw redirect({ to: "/signin", search: { redirect: location.href } });
     }
+    const userId = data.session.user.id;
     // Check onboarding completion
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_completed")
-      .eq("user_id", data.session.user.id)
+      .eq("user_id", userId)
       .maybeSingle();
     if (profile && !profile.onboarding_completed) {
       throw redirect({ to: "/onboarding" });
+    }
+    // Check active subscription
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("status, current_period_end")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const active =
+      sub &&
+      ["active", "trialing", "past_due"].includes(sub.status) &&
+      (!sub.current_period_end || new Date(sub.current_period_end).getTime() > Date.now());
+    if (!active) {
+      throw redirect({ to: "/renewal" });
     }
   },
   component: AppLayout,

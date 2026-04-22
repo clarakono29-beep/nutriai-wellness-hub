@@ -10,8 +10,8 @@ export const Route = createFileRoute("/_authed")({
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({
-        to: "/auth",
-        search: { mode: "signin" as const },
+        to: "/signin",
+        search: { redirect: location.href },
       });
     }
   },
