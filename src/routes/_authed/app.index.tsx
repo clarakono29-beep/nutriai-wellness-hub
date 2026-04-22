@@ -327,7 +327,12 @@ function Diary() {
         </div>
 
         {logs.length === 0 ? (
-          <EmptyPlate />
+          <EmptyState
+            className="mt-6"
+            emoji="🍽️"
+            title="Nothing logged yet"
+            subtitle="Type your meal in the bar below — AI handles the macros."
+          />
         ) : (
           <div className="mt-3 space-y-5">
             {MEAL_TYPES.map((m) =>
@@ -338,7 +343,7 @@ function Diary() {
                   </h3>
                   <div className="space-y-2">
                     {grouped[m].map((l) => (
-                      <FoodRow key={l.id} log={l} onDelete={() => removeLog(l.id)} />
+                      <FoodRow key={l.id} log={l} onDelete={() => handleDelete(l.id)} />
                     ))}
                   </div>
                 </section>
@@ -405,6 +410,9 @@ function Diary() {
       {milestone && (
         <StreakMilestoneModal milestone={milestone} onClose={clearMilestone} />
       )}
+
+      {/* Goal-reached celebration */}
+      <Confetti trigger={confettiTrigger > 0} count={60} duration={3500} />
     </div>
   );
 }
