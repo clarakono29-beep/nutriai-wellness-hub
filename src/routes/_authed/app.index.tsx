@@ -12,11 +12,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { todayISO, fmtKcal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { evaluateAchievements } from "@/lib/achievements";
+import { haptics } from "@/lib/haptics";
 
 import { Pill } from "@/components/ui/luxury/Pill";
 import { CoachChat } from "@/components/coach/CoachChat";
 import { StreakMilestoneModal } from "@/components/gamification/StreakMilestoneModal";
 import { NotificationPrompt } from "@/components/gamification/NotificationPrompt";
+import { Confetti } from "@/components/ui/luxury/Confetti";
+import { EmptyState } from "@/components/ui/luxury/EmptyState";
 import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/app/")({
@@ -56,6 +59,8 @@ function Diary() {
   const [confirmName, setConfirmName] = useState("");
   const [servings, setServings] = useState(1);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const goalCelebratedRef = useRef(false);
 
   // Load water for today
   useEffect(() => {
@@ -74,6 +79,19 @@ function Diary() {
   const target = profile?.daily_calories ?? 2000;
   const remaining = Math.max(0, target - totals.calories);
   const ringPct = Math.min(100, (totals.calories / target) * 100);
+
+  // Celebrate when daily calorie goal is first reached today
+  useEffect(() => {
+    if (totals.calories >= target && target > 0 && !goalCelebratedRef.current) {
+      goalCelebratedRef.current = true;
+      setConfettiTrigger((n) => n + 1);
+      haptics.goal();
+    }
+    if (totals.calories < target * 0.95) {
+      // allow celebrating again after a reset (e.g. day rollover, deletes)
+      goalCelebratedRef.current = false;
+    }
+  }, [totals.calories, target]);
 
   const recents = useMemo(() => {
     const seen = new Set<string>();
@@ -160,9 +178,11 @@ function Diary() {
     });
     setConfirmSubmitting(false);
     if (error) {
+      haptics.error();
       toast.error(error.message);
       return;
     }
+    haptics.success();
     toast.success(`${preview.emoji} ${confirmName} — ${fmtKcal(preview.calories * mult)} kcal added`);
     setText("");
     closeModal();
@@ -175,6 +195,7 @@ function Diary() {
   };
 
   const relog = async (l: FoodLog) => {
+    haptics.light();
     const { error } = await addLog({
       meal_type: inferMeal(),
       food_name: l.food_name,
@@ -188,6 +209,11 @@ function Diary() {
     });
     if (error) toast.error(error.message);
     else toast.success(`Re-logged ${l.food_name}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    haptics.light();
+    await removeLog(id);
   };
 
   return (
@@ -301,7 +327,12 @@ function Diary() {
         </div>
 
         {logs.length === 0 ? (
-          <EmptyPlate />
+          <EmptyState
+            className="mt-6"
+            emoji="🍽️"
+            title="Nothing logged yet"
+            subtitle="Type your meal in the bar below — AI handles the macros."
+          />
         ) : (
           <div className="mt-3 space-y-5">
             {MEAL_TYPES.map((m) =>
@@ -312,7 +343,7 @@ function Diary() {
                   </h3>
                   <div className="space-y-2">
                     {grouped[m].map((l) => (
-                      <FoodRow key={l.id} log={l} onDelete={() => removeLog(l.id)} />
+                      <FoodRow key={l.id} log={l} onDelete={() => handleDelete(l.id)} />
                     ))}
                   </div>
                 </section>
@@ -379,6 +410,9 @@ function Diary() {
       {milestone && (
         <StreakMilestoneModal milestone={milestone} onClose={clearMilestone} />
       )}
+
+      {/* Goal-reached celebration */}
+      <Confetti trigger={confettiTrigger > 0} count={60} duration={3500} />
     </div>
   );
 }
@@ -618,23 +652,7 @@ function FoodRow({ log, onDelete }: { log: FoodLog; onDelete: () => void }) {
   );
 }
 
-function EmptyPlate() {
-  return (
-    <div className="mt-6 flex flex-col items-center text-center py-10">
-      <div className="relative h-24 w-24">
-        <div className="absolute inset-0 rounded-full bg-[color:var(--cream-dark)]" />
-        <div className="absolute inset-3 rounded-full border-2 border-dashed border-[color:var(--cream-border)]" />
-        <div className="absolute inset-0 grid place-items-center text-[28px]">🍽️</div>
-      </div>
-      <p className="mt-4 text-[14px] text-[color:var(--ink-mid)] max-w-[260px]">
-        Start logging to see your food here.
-      </p>
-      <p className="mt-1 text-[12px] text-[color:var(--ink-light)]">
-        Tip: type a meal in the bar below — Claude does the rest.
-      </p>
-    </div>
-  );
-}
+
 
 function ConfirmModal({
   preview,

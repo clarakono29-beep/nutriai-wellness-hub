@@ -2,6 +2,8 @@ import { createFileRoute, Outlet, Link, redirect, useLocation, useNavigate } fro
 import { BookOpen, ChefHat, NotebookPen, Plus, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { PageTransition } from "@/components/ui/luxury/PageTransition";
+import { haptics } from "@/lib/haptics";
 
 export const Route = createFileRoute("/_authed/app")({
   beforeLoad: async ({ location }) => {
@@ -63,7 +65,9 @@ function AppLayout() {
 
   return (
     <div className="mobile-shell pb-[110px] bg-[color:var(--cream)]">
-      <Outlet />
+      <PageTransition>
+        <Outlet />
+      </PageTransition>
 
       {/* Tab bar */}
       <nav
@@ -73,9 +77,12 @@ function AppLayout() {
         <div className="relative bg-white/85 backdrop-blur-xl border-t border-[color:var(--cream-border)]">
           {/* Floating center add button */}
           <button
-            onClick={() => navigate({ to: "/app/log" })}
+            onClick={() => {
+              haptics.tap();
+              navigate({ to: "/app/log" });
+            }}
             aria-label="Quick log meal"
-            className="absolute left-1/2 -translate-x-1/2 -top-7 h-14 w-14 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-cta active:scale-95 transition-transform ease-luxury z-10"
+            className="absolute left-1/2 -translate-x-1/2 -top-7 h-14 w-14 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-cta active:scale-95 transition-transform ease-luxury z-10 animate-pulse-glow"
           >
             <Plus className="h-6 w-6" strokeWidth={2.6} />
           </button>
