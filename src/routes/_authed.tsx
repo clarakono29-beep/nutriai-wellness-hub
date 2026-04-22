@@ -7,6 +7,15 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const Route = createFileRoute("/_authed")({
   beforeLoad: async ({ location }) => {
+    // DEV BYPASS: skip auth entirely when flag is set in localStorage.
+    // Toggle from the landing page "Dev: Skip auth" link (dev builds only).
+    if (
+      import.meta.env.DEV &&
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("dev_bypass_auth") === "1"
+    ) {
+      return;
+    }
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({
