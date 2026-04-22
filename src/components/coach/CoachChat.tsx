@@ -182,6 +182,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
     haptics.light();
+    setContinueError(null);
     const next: ChatMessage[] = [...messages, { role: "user", content: text.trim() }];
     setMessages(next);
     setFollowups([]);
