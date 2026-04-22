@@ -112,6 +112,11 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const rafScrollRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const stop = () => {
+    abortRef.current?.abort();
+  };
 
   // Track whether the user is near the bottom; if they scroll up, stop pinning.
   const handleScroll = () => {
