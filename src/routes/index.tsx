@@ -502,3 +502,22 @@ function FinalCTA() {
     </section>
   );
 }
+
+function DevBypassLink() {
+  const navigate = useNavigate();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem("dev_bypass_auth", "1");
+        }
+        navigate({ to: "/app" });
+      }}
+      className="font-body text-[12px] px-2.5 py-1 rounded-full border border-[color:var(--gold)]/60 text-[color:var(--gold-light)] hover:bg-white/10 transition-colors"
+      title="Dev only: skip auth and enter the app"
+    >
+      Dev: Skip auth →
+    </button>
+  );
+}
