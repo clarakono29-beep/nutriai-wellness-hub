@@ -259,6 +259,19 @@ function Onboarding() {
       />
     );
   }
+  // Step 12 is a full-bleed paywall — its own layout, no top bar/progress.
+  if (step === TOTAL_STEPS) {
+    return (
+      <PaywallStep
+        name={a.name.trim() || "there"}
+        goal={a.goal}
+        plan={plan}
+        submitting={submitting}
+        onBack={goBack}
+        onActivate={finalize}
+      />
+    );
+  }
 
   return (
     <div className="mobile-shell flex flex-col min-h-[100dvh] bg-[color:var(--cream)]">
@@ -350,15 +363,12 @@ function Onboarding() {
             onResult={setDemoResult}
           />
         )}
-        {step === TOTAL_STEPS && (
-          <PlaceholderStep step={step} onSkip={() => {}} final />
-        )}
       </StepShell>
 
       {/* Sticky CTA */}
       <div className="sticky bottom-0 left-0 right-0 px-6 pt-6 pb-6 bg-gradient-to-t from-[color:var(--cream)] via-[color:var(--cream)] to-transparent">
         <PrimaryButton
-          onClick={step === TOTAL_STEPS ? finalize : goNext}
+          onClick={goNext}
           disabled={!canContinue}
           loading={submitting}
         >
@@ -1652,35 +1662,306 @@ function Confetti() {
   );
 }
 
-/* ----------------- PLACEHOLDER (step 12) ----------------- */
+/* ----------------- STEP 12: PAYWALL ----------------- */
 
-function PlaceholderStep({
-  step,
-  onSkip,
-  final,
+const INCLUDED_FEATURES: { icon: string; label: string }[] = [
+  { icon: "🤖", label: "Unlimited AI meal logging" },
+  { icon: "📸", label: "Photo food recognition" },
+  { icon: "🧠", label: "Personalised calorie & macros" },
+  { icon: "🍽️", label: "5,000+ curated healthy recipes" },
+  { icon: "📊", label: "Advanced progress analytics" },
+  { icon: "⚡", label: "Weekly Life Score tracker" },
+  { icon: "🎯", label: "Personalised program library" },
+  { icon: "💬", label: "AI nutrition coaching" },
+  { icon: "🔔", label: "Smart meal reminders" },
+  { icon: "🛒", label: "Automated shopping lists" },
+];
+
+type PlanId = "monthly" | "quarterly" | "annual";
+const PRICING: {
+  id: PlanId;
+  label: string;
+  perMonth: string;
+  totalLine: string;
+  saveLine?: string;
+  badge?: { text: string; tone: "gold" | "coral" };
+}[] = [
+  {
+    id: "monthly",
+    label: "Monthly",
+    perMonth: "$12.99",
+    totalLine: "$12.99 billed monthly",
+  },
+  {
+    id: "quarterly",
+    label: "3 Months",
+    perMonth: "$8.99",
+    totalLine: "$26.99 billed every 3 months",
+    saveLine: "Save $12 vs monthly",
+    badge: { text: "POPULAR", tone: "gold" },
+  },
+  {
+    id: "annual",
+    label: "Annual",
+    perMonth: "$4.99",
+    totalLine: "$59.99 billed annually",
+    saveLine: "Save $96 vs monthly",
+    badge: { text: "BEST VALUE 🔥", tone: "coral" },
+  },
+];
+
+const TESTIMONIALS = [
+  { initial: "S", name: "Sarah", result: "Lost 14 kg in 4 months" },
+  { initial: "M", name: "Marcus", result: "Gained 6 kg of muscle in 5 months" },
+  { initial: "A", name: "Aisha", result: "Lost 9 kg in 3 months" },
+];
+
+function PaywallStep({
+  name,
+  goal,
+  plan,
+  submitting,
+  onBack,
+  onActivate,
 }: {
-  step: number;
-  onSkip: () => void;
-  final?: boolean;
+  name: string;
+  goal: Answers["goal"];
+  plan: Plan | null;
+  submitting: boolean;
+  onBack: () => void;
+  onActivate: () => void;
 }) {
+  const [selected, setSelected] = useState<PlanId>("quarterly");
+  const [tIndex, setTIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTIndex((i) => (i + 1) % TESTIMONIALS.length), 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  const goalLabel =
+    goal === "lose"
+      ? "weight loss"
+      : goal === "gain"
+        ? "muscle building"
+        : goal === "maintain"
+          ? "maintenance"
+          : "wellness";
+
+  const cohort = goal === "gain" ? "412,000" : goal === "maintain" ? "298,000" : "1.2M";
+  const weeks = plan?.weeks_to_goal && plan.weeks_to_goal > 0 ? plan.weeks_to_goal : 12;
+
   return (
-    <div className="pt-2">
-      <h2 className="font-display font-bold text-[30px] text-[color:var(--ink)] leading-[1.1]">
-        Step {step}
-      </h2>
-      <p className="mt-3 font-body text-[15px] text-[color:var(--ink-mid)] leading-relaxed">
-        {final
-          ? "Your blueprint is ready."
-          : "This step is coming soon. Tap continue to proceed."}
-      </p>
-      {!final && (
+    <div className="mobile-shell flex flex-col min-h-[100dvh] bg-[color:var(--cream)] pb-10">
+      {/* Hero (forest gradient) */}
+      <header
+        className="relative px-6 pt-[52px] pb-[52px] text-white rounded-b-[32px] overflow-hidden"
+        style={{ background: "var(--gradient-hero)" }}
+      >
         <button
-          onClick={onSkip}
-          className="mt-6 text-[13px] uppercase tracking-widest text-[color:var(--sage)]"
+          onClick={onBack}
+          className="absolute top-5 left-5 h-10 w-10 grid place-items-center rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
+          aria-label="Back"
         >
-          Skip for now
+          <ArrowLeft className="h-4 w-4" />
         </button>
-      )}
+
+        <div className="pointer-events-none absolute -top-16 -right-12 h-56 w-56 rounded-full bg-[color:var(--gold)] opacity-20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-[color:var(--forest-light)] opacity-30 blur-3xl" />
+
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--gold)] px-3 py-1 text-[11px] uppercase tracking-widest font-semibold text-[color:var(--forest)]">
+            🎉 Your plan is complete
+          </span>
+          <h1 className="mt-5 font-display font-black text-[38px] leading-[1.05] tracking-tight">
+            Start your
+            <br />
+            transformation,
+            <br />
+            <span className="italic font-light text-[color:var(--gold-light)]">{name}.</span>
+          </h1>
+          <p className="mt-4 font-body text-[16px] leading-relaxed" style={{ color: "rgba(255,255,255,0.75)" }}>
+            Your personalised {goalLabel} plan is ready. Join {cohort} people with the same goal who transformed in {weeks} weeks.
+          </p>
+        </div>
+      </header>
+
+      {/* Plan summary card (overlapping) */}
+      <section
+        className="relative -mt-6 mx-6 bg-white rounded-[28px] p-6 shadow-elev-lg border border-[color:var(--cream-border)]"
+      >
+        <h3 className="font-body font-semibold text-[14px] text-[color:var(--ink)]">
+          Your plan includes
+        </h3>
+        <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3">
+          {INCLUDED_FEATURES.map((f) => (
+            <li key={f.label} className="flex items-start gap-2">
+              <span className="mt-[3px] h-4 w-4 grid place-items-center rounded-full bg-[color:var(--sage-light)] text-[color:var(--forest)] shrink-0">
+                <Check className="h-3 w-3" strokeWidth={3} />
+              </span>
+              <span className="font-body text-[13px] text-[color:var(--ink)] leading-snug">
+                <span className="mr-1">{f.icon}</span>
+                {f.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Pricing */}
+      <section className="px-6 mt-8">
+        <div className="grid grid-cols-3 gap-3">
+          {PRICING.map((p) => {
+            const isSel = selected === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelected(p.id)}
+                className={cn(
+                  "relative text-left rounded-[20px] px-3 pt-5 pb-4 transition-all duration-200 ease-luxury",
+                  isSel
+                    ? "border-[2.5px] border-[color:var(--forest)] bg-[color-mix(in_oklab,var(--forest)_8%,white)] shadow-elev-md"
+                    : "border border-[color:var(--cream-border)] bg-white hover:border-[color:var(--forest-mid)]",
+                )}
+              >
+                {p.badge && (
+                  <span
+                    className={cn(
+                      "absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap",
+                      p.badge.tone === "gold"
+                        ? "bg-[color:var(--gold)] text-[color:var(--forest)]"
+                        : "bg-[color:var(--coral)] text-white",
+                    )}
+                  >
+                    {p.badge.text}
+                  </span>
+                )}
+                <div className="font-body text-[12px] font-semibold uppercase tracking-wider text-[color:var(--ink-mid)]">
+                  {p.label}
+                </div>
+                <div className="mt-2 font-display font-bold text-[28px] leading-none text-[color:var(--forest)]">
+                  {p.perMonth}
+                </div>
+                <div className="font-body text-[12px] text-[color:var(--ink-mid)]">/month</div>
+                <div className="mt-2 font-body text-[10px] text-[color:var(--ink-light)] leading-tight">
+                  {p.totalLine}
+                </div>
+                {p.saveLine && (
+                  <div className="mt-1.5 font-body text-[11px] font-semibold text-[color:var(--forest-light)]">
+                    {p.saveLine}
+                  </div>
+                )}
+                {isSel && (
+                  <span className="absolute top-2 right-2 h-5 w-5 grid place-items-center rounded-full bg-[color:var(--forest)] text-white">
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Main CTA */}
+      <section className="px-6 mt-7">
+        <button
+          onClick={onActivate}
+          disabled={submitting}
+          className="relative w-full h-[60px] rounded-[20px] font-body font-semibold text-[17px] text-white bg-gradient-cta shadow-elev-cta transition-all duration-200 ease-luxury hover:-translate-y-px active:scale-[0.98] disabled:opacity-60 disabled:hover:translate-y-0 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+        >
+          {submitting ? (
+            <>
+              <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              Activating your plan…
+            </>
+          ) : (
+            <>
+              Get Full Access Now <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </button>
+        <p className="mt-3 text-center font-body text-[12px] text-[color:var(--ink-light)]">
+          🔒 Secure payment via Stripe · Cancel anytime
+        </p>
+        <p className="mt-1 text-center font-body text-[12px] text-[color:var(--ink-light)]">
+          💰 Not satisfied? Full refund within 30 days. No questions asked.
+        </p>
+      </section>
+
+      {/* Testimonial carousel */}
+      <section className="px-6 mt-8">
+        <div className="relative h-[88px] overflow-hidden rounded-[20px] bg-white border border-[color:var(--cream-border)] shadow-elev-sm">
+          {TESTIMONIALS.map((t, i) => (
+            <div
+              key={t.name}
+              className="absolute inset-0 flex items-center gap-4 px-5 transition-all duration-500 ease-luxury"
+              style={{
+                opacity: i === tIndex ? 1 : 0,
+                transform: `translateX(${(i - tIndex) * 24}px)`,
+                pointerEvents: i === tIndex ? "auto" : "none",
+              }}
+              aria-hidden={i !== tIndex}
+            >
+              <div className="h-12 w-12 shrink-0 grid place-items-center rounded-full bg-[color:var(--gold)] text-[color:var(--forest)] font-display font-bold text-[20px]">
+                {t.initial}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-body font-semibold text-[14px] text-[color:var(--ink)]">
+                  {t.name}
+                </div>
+                <div className="font-body text-[13px] text-[color:var(--forest-light)] font-semibold">
+                  {t.result}
+                </div>
+              </div>
+              <div className="text-[color:var(--gold)] text-[14px] tracking-tight" aria-label="5 stars">
+                ★★★★★
+              </div>
+            </div>
+          ))}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {TESTIMONIALS.map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-300",
+                  i === tIndex
+                    ? "w-4 bg-[color:var(--forest)]"
+                    : "w-1.5 bg-[color:var(--cream-border)]",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust footer */}
+      <section className="px-6 mt-7">
+        <div className="grid grid-cols-2 gap-y-2 gap-x-3">
+          {[
+            { i: "🔬", t: "Science-backed" },
+            { i: "🏆", t: "#1 Nutrition App" },
+            { i: "🔐", t: "Bank-level security" },
+            { i: "❤️", t: "30-day guarantee" },
+          ].map((b) => (
+            <div
+              key={b.t}
+              className="flex items-center gap-2 font-body text-[12px] text-[color:var(--ink-light)]"
+            >
+              <span className="text-[14px]">{b.i}</span>
+              {b.t}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Sign in */}
+      <p className="mt-8 text-center font-body text-[13px] text-[color:var(--ink-light)]">
+        Already a member?{" "}
+        <a href="/auth" className="text-[color:var(--forest)] font-semibold underline-offset-2 hover:underline">
+          Sign in
+        </a>
+      </p>
     </div>
   );
 }
+
