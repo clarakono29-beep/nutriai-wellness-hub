@@ -182,6 +182,12 @@ function Onboarding() {
         return !!a.activity_level;
       case 8:
         return a.diet_preferences.length >= 1;
+      case 9:
+        return false; // auto-advances after computation
+      case 10:
+        return !!plan;
+      case 11:
+        return !!demoResult;
       default:
         return true;
     }
