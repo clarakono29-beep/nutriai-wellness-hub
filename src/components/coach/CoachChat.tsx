@@ -297,11 +297,23 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-          {messages.map((m, i) => (
-            <Bubble key={i} role={m.role} content={m.content} />
-          ))}
-          {loading && messages[messages.length - 1]?.role === "user" && (
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-5 py-4 space-y-3"
+        >
+          {messages.map((m, i) => {
+            const isLast = i === messages.length - 1;
+            return (
+              <Bubble
+                key={i}
+                role={m.role}
+                content={m.content}
+                isStreaming={streaming && isLast && m.role === "assistant"}
+              />
+            );
+          })}
+          {loading && !streaming && messages[messages.length - 1]?.role === "user" && (
             <div className="flex items-center gap-2 text-[12px] text-[color:var(--ink-mid)] pl-2">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> thinking…
             </div>
