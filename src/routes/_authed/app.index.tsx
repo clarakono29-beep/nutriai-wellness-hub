@@ -178,9 +178,11 @@ function Diary() {
     });
     setConfirmSubmitting(false);
     if (error) {
+      haptics.error();
       toast.error(error.message);
       return;
     }
+    haptics.success();
     toast.success(`${preview.emoji} ${confirmName} — ${fmtKcal(preview.calories * mult)} kcal added`);
     setText("");
     closeModal();
@@ -193,6 +195,7 @@ function Diary() {
   };
 
   const relog = async (l: FoodLog) => {
+    haptics.light();
     const { error } = await addLog({
       meal_type: inferMeal(),
       food_name: l.food_name,
@@ -206,6 +209,11 @@ function Diary() {
     });
     if (error) toast.error(error.message);
     else toast.success(`Re-logged ${l.food_name}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    haptics.light();
+    await removeLog(id);
   };
 
   return (
