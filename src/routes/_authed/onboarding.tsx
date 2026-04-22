@@ -13,8 +13,9 @@ import {
 
 import { LeafMark, Wordmark } from "@/components/brand/Logo";
 import { PrimaryButton } from "@/components/ui/luxury/PrimaryButton";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock, Mic, Camera, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAI, type MealAnalysis } from "@/hooks/useAI";
 
 export const Route = createFileRoute("/_authed/onboarding")({
   head: () => ({ meta: [{ title: "Set up your profile — NutriAI" }] }),
@@ -24,6 +25,18 @@ export const Route = createFileRoute("/_authed/onboarding")({
 const TOTAL_STEPS = 12;
 
 type Direction = 1 | -1;
+
+interface Plan {
+  bmr: number;
+  tdee: number;
+  daily_calories: number;
+  deficit: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fibre_g: number;
+  weeks_to_goal: number;
+}
 
 interface Answers {
   problems: string[];
@@ -122,6 +135,8 @@ function Onboarding() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<Direction>(1);
   const [submitting, setSubmitting] = useState(false);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [demoResult, setDemoResult] = useState<MealAnalysis | null>(null);
 
   const [a, setA] = useState<Answers>({
     problems: [],
@@ -167,6 +182,12 @@ function Onboarding() {
         return !!a.activity_level;
       case 8:
         return a.diet_preferences.length >= 1;
+      case 9:
+        return false; // auto-advances after computation
+      case 10:
+        return !!plan;
+      case 11:
+        return !!demoResult;
       default:
         return true;
     }
@@ -177,6 +198,10 @@ function Onboarding() {
     if (step === 4) {
       const trimmed = a.name.trim();
       return trimmed.length >= 2 ? `Nice to meet you, ${trimmed}` : "Continue";
+    }
+    if (step === 10) return "This is incredible — what's next?";
+    if (step === 11) {
+      return demoResult ? "Continue to my personalised plan" : "Try the AI above to continue";
     }
     if (step === TOTAL_STEPS) return "Open my dashboard";
     return "Continue";
@@ -221,6 +246,18 @@ function Onboarding() {
   // Step 1 is full-bleed splash with its own CTA; render separately.
   if (step === 1) {
     return <WelcomeStep onBegin={goNext} />;
+  }
+  // Step 9 is a full-bleed cinematic computation screen.
+  if (step === 9) {
+    return (
+      <CalculatingStep
+        answers={a}
+        onComplete={(p) => {
+          setPlan(p);
+          goNext();
+        }}
+      />
+    );
   }
 
   return (
@@ -302,8 +339,16 @@ function Onboarding() {
             onChange={(prefs) => setA({ ...a, diet_preferences: prefs })}
           />
         )}
-        {step >= 9 && step < TOTAL_STEPS && (
-          <PlaceholderStep step={step} onSkip={goNext} />
+        {step === 10 && plan && (
+          <BlueprintStep name={a.name.trim() || "You"} plan={plan} goal={a.goal} target_weight_kg={Number(a.target_weight_kg) || 0} />
+        )}
+        {step === 11 && (
+          <AIDemoStep
+            plan={plan}
+            goal={a.goal}
+            result={demoResult}
+            onResult={setDemoResult}
+          />
         )}
         {step === TOTAL_STEPS && (
           <PlaceholderStep step={step} onSkip={() => {}} final />
@@ -1069,7 +1114,545 @@ function DietStep({
   );
 }
 
-/* ----------------- PLACEHOLDER (steps 9–12) ----------------- */
+/* ----------------- STEP 9: CALCULATING (cinematic) ----------------- */
+
+const ACTIVITY_MULT: Record<string, number> = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
+
+const CALC_STEPS = [
+  { emoji: "🧬", text: "Calculating your metabolic rate (BMR)" },
+  { emoji: "⚡", text: "Applying activity multiplier (TDEE)" },
+  { emoji: "🎯", text: "Setting your daily calorie target" },
+  { emoji: "🍽️", text: "Building your personal macro split" },
+];
+
+function computePlan(a: Answers): Plan {
+  const weight = Number(a.weight_kg) || 70;
+  const height = Number(a.height_cm) || 170;
+  const age = Number(a.age) || 30;
+  const target = Number(a.target_weight_kg) || weight;
+  const mult = ACTIVITY_MULT[a.activity_level || "moderate"] ?? 1.55;
+
+  const baseM = 10 * weight + 6.25 * height - 5 * age + 5;
+  const baseF = 10 * weight + 6.25 * height - 5 * age - 161;
+  const bmr =
+    a.gender === "male" ? baseM :
+    a.gender === "female" ? baseF :
+    (baseM + baseF) / 2;
+
+  const tdee = bmr * mult;
+  let daily = tdee;
+  if (a.goal === "lose") daily = tdee - 500;
+  else if (a.goal === "gain") daily = tdee + 350;
+
+  const protein_g = Math.round(weight * 2.2);
+  const fat_g = Math.round((daily * 0.28) / 9);
+  const carbs_g = Math.round((daily * 0.42) / 4);
+  const fibre_g = 28;
+  const weeks_to_goal = Math.max(
+    0,
+    Math.round((Math.abs(weight - target) * 7700) / 3500 / 7),
+  );
+
+  return {
+    bmr: Math.round(bmr),
+    tdee: Math.round(tdee),
+    daily_calories: Math.round(daily),
+    deficit: Math.round(tdee - daily),
+    protein_g,
+    carbs_g,
+    fat_g,
+    fibre_g,
+    weeks_to_goal,
+  };
+}
+
+function CalculatingStep({
+  answers,
+  onComplete,
+}: {
+  answers: Answers;
+  onComplete: (plan: Plan) => void;
+}) {
+  const [doneCount, setDoneCount] = useState(0);
+  const [showReady, setShowReady] = useState(false);
+  const planRef = useRef<Plan | null>(null);
+
+  useEffect(() => {
+    planRef.current = computePlan(answers);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 1; i <= CALC_STEPS.length; i++) {
+      timers.push(setTimeout(() => setDoneCount(i), i * 1200));
+    }
+    timers.push(setTimeout(() => setShowReady(true), CALC_STEPS.length * 1200 + 100));
+    timers.push(
+      setTimeout(() => {
+        if (planRef.current) onComplete(planRef.current);
+      }, CALC_STEPS.length * 1200 + 1100),
+    );
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const totalMs = CALC_STEPS.length * 1200 + 200;
+
+  return (
+    <div
+      className="mobile-shell relative overflow-hidden text-white flex flex-col min-h-[100dvh] px-6 pt-10 pb-8"
+      style={{ background: "var(--gradient-hero)" }}
+    >
+      <div className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-[color:var(--gold)] opacity-15 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -left-20 h-80 w-80 rounded-full bg-[color:var(--forest-light)] opacity-30 blur-3xl" />
+
+      <div className="relative flex-1 flex flex-col items-center justify-center text-center">
+        <div className="text-[color:var(--gold)] animate-leaf-pulse">
+          <LeafMark size={80} />
+        </div>
+        <h2 className="mt-8 font-display font-bold text-white text-[30px] leading-[1.15]">
+          Calculating your
+          <br />
+          personalised plan
+        </h2>
+        <p className="mt-3 font-body text-[14px]" style={{ color: "rgba(255,255,255,0.7)" }}>
+          This is what we're working on...
+        </p>
+
+        <div className="mt-10 w-full max-w-[360px] space-y-4">
+          {CALC_STEPS.map((s, i) => {
+            const visible = doneCount >= i;
+            const done = doneCount >= i + 1;
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "flex items-center gap-3 transition-all duration-500",
+                  visible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2",
+                )}
+              >
+                <div
+                  className={cn(
+                    "h-10 w-10 shrink-0 rounded-full grid place-items-center transition-all duration-500",
+                    done
+                      ? "bg-[color:var(--forest-light)] text-white"
+                      : "bg-white/10 text-white/70",
+                  )}
+                >
+                  {done ? <Check className="h-5 w-5" strokeWidth={3} /> : <Clock className="h-4 w-4" />}
+                </div>
+                <div className="flex items-center gap-2 text-left">
+                  <span className="text-[20px]">{s.emoji}</span>
+                  <span className="font-body text-[15px] text-white/90">{s.text}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {showReady && (
+          <div className="mt-8 inline-flex items-center gap-2 font-display italic text-[20px] text-[color:var(--gold-light)] animate-fade-up">
+            <Sparkles className="h-5 w-5" /> Your plan is ready
+          </div>
+        )}
+      </div>
+
+      <div className="relative h-[2px] rounded-full bg-white/15 overflow-hidden">
+        <div
+          className="h-full bg-[color:var(--gold)]"
+          style={{ width: "0%", animation: `calc-fill ${totalMs}ms linear forwards` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ----------------- STEP 10: BLUEPRINT (AHA) ----------------- */
+
+function useCountUp(target: number, duration = 1500) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+function BlueprintStep({
+  name,
+  plan,
+  goal,
+  target_weight_kg,
+}: {
+  name: string;
+  plan: Plan;
+  goal: Answers["goal"];
+  target_weight_kg: number;
+}) {
+  const animated = useCountUp(plan.daily_calories);
+  const showTimeline = (goal === "lose" || goal === "gain") && plan.weeks_to_goal > 0;
+  const hidden = Math.round(plan.tdee * 0.47);
+
+  return (
+    <div className="pt-2">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-[color:var(--gold-light)] px-3 py-1 text-[10px] uppercase tracking-widest font-semibold text-[color:var(--gold)]">
+        🧬 Your Nutrition DNA Report
+      </span>
+      <h2 className="mt-4 font-display font-bold text-[28px] text-[color:var(--ink)] leading-[1.1]">
+        {name}'s Personal
+        <br />
+        Nutrition Blueprint
+      </h2>
+      <p className="mt-3 font-body text-[14px] text-[color:var(--ink-mid)] leading-relaxed">
+        Calculated using the same equations used by registered dietitians and
+        sports nutritionists.
+      </p>
+
+      <div
+        className="mt-6 rounded-[28px] p-7 text-center text-white shadow-elev-lg relative overflow-hidden"
+        style={{ background: "var(--gradient-hero)" }}
+      >
+        <div className="pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-[color:var(--gold)] opacity-20 blur-3xl" />
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-[color:var(--gold-light)]">
+          Your daily calorie target
+        </div>
+        <div className="mt-2 font-display font-black text-white text-[68px] leading-none tabular-nums">
+          {animated.toLocaleString()}
+        </div>
+        <div className="mt-1 font-body text-[15px]" style={{ color: "rgba(255,255,255,0.7)" }}>
+          kcal per day
+        </div>
+        <div className="my-5 h-px w-full bg-white/15" />
+        <div className="grid grid-cols-3 gap-2 text-[12px]">
+          <div>
+            <div className="text-white/45">Baseline</div>
+            <div className="mt-0.5 text-white/85 font-medium">{plan.bmr.toLocaleString()} kcal</div>
+          </div>
+          <div>
+            <div className="text-white/45">Total burn</div>
+            <div className="mt-0.5 text-white/85 font-medium">{plan.tdee.toLocaleString()} kcal</div>
+          </div>
+          <div>
+            <div className="text-white/45">{plan.deficit > 0 ? "Deficit" : plan.deficit < 0 ? "Surplus" : "Balance"}</div>
+            <div className="mt-0.5 text-white/85 font-medium">{Math.abs(plan.deficit).toLocaleString()} kcal</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <MacroCard value={plan.protein_g} label="Protein" sub="Muscle synthesis" tone="purple" />
+        <MacroCard value={plan.carbs_g} label="Carbs" sub="Energy supply" tone="blue" />
+        <MacroCard value={plan.fat_g} label="Fat" sub="Hormone health" tone="gold" />
+      </div>
+
+      {showTimeline && (
+        <div className="mt-5 rounded-[14px] bg-white border border-[color:var(--cream-border)] border-l-4 border-l-[color:var(--forest)] p-5 flex items-start gap-4 shadow-elev-sm">
+          <div className="text-[36px] leading-none">{goal === "lose" ? "🔥" : "💪"}</div>
+          <div className="flex-1">
+            <div className="text-[11px] uppercase tracking-widest font-semibold text-[color:var(--ink-light)]">
+              Estimated transformation timeline
+            </div>
+            <div className="mt-1 font-display font-bold text-[20px] text-[color:var(--ink)] leading-tight">
+              {plan.weeks_to_goal} weeks to reach {target_weight_kg}kg
+            </div>
+            <div className="mt-1 font-body text-[13px] text-[color:var(--ink-mid)]">
+              At 0.5kg per week — the safest sustainable pace
+            </div>
+            <div className="mt-3 h-1.5 rounded-full bg-[color:var(--cream-border)] overflow-hidden">
+              <div className="h-full bg-[color:var(--forest)]" style={{ width: "20%" }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-5 rounded-[14px] bg-[color:var(--coral-light)] border-l-4 border-[color:var(--coral)] p-5">
+        <div className="flex items-center gap-2">
+          <span className="text-[20px]">💡</span>
+          <span className="font-body font-semibold text-[14px] text-[color:var(--coral)]">
+            What's been holding you back
+          </span>
+        </div>
+        <p className="mt-2 font-body text-[14px] leading-relaxed text-[color:var(--ink)]">
+          Research shows people underestimate their calorie intake by an average
+          of <strong>47%</strong>. That's <strong>{hidden.toLocaleString()} hidden calories</strong> per
+          day — the exact reason previous attempts haven't worked. NutriAI's AI
+          catches every one of these.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MacroCard({
+  value,
+  label,
+  sub,
+  tone,
+}: {
+  value: number;
+  label: string;
+  sub: string;
+  tone: "purple" | "blue" | "gold";
+}) {
+  const tones: Record<string, { bg: string; accent: string }> = {
+    purple: { bg: "color-mix(in oklab, #8b5cf6 10%, white)", accent: "#7c3aed" },
+    blue: { bg: "color-mix(in oklab, #3b82f6 10%, white)", accent: "#2563eb" },
+    gold: { bg: "var(--gold-light)", accent: "var(--gold)" },
+  };
+  const t = tones[tone];
+  return (
+    <div className="rounded-[14px] p-4 text-center" style={{ background: t.bg }}>
+      <div className="font-display font-bold text-[28px] leading-none" style={{ color: t.accent }}>
+        {value}<span className="text-[14px] font-medium ml-0.5">g</span>
+      </div>
+      <div className="mt-1.5 font-body font-semibold text-[12px] text-[color:var(--ink)]">{label}</div>
+      <div className="mt-0.5 font-body text-[11px] text-[color:var(--ink-light)]">{sub}</div>
+    </div>
+  );
+}
+
+/* ----------------- STEP 11: AI DEMO ----------------- */
+
+const DEMO_CHIPS = [
+  "3 scrambled eggs",
+  "Chicken Caesar salad",
+  "Oatmeal with banana",
+  "Big Mac meal",
+  "Avocado toast",
+];
+
+function AIDemoStep({
+  plan,
+  goal,
+  result,
+  onResult,
+}: {
+  plan: Plan | null;
+  goal: Answers["goal"];
+  result: MealAnalysis | null;
+  onResult: (r: MealAnalysis) => void;
+}) {
+  const [text, setText] = useState("");
+  const [confetti, setConfetti] = useState(false);
+  const [elapsed, setElapsed] = useState<number | null>(null);
+  const { analyseMeal, loading } = useAI();
+
+  const submit = async () => {
+    if (!text.trim() || loading) return;
+    const t0 = performance.now();
+    const r = await analyseMeal({
+      meal_description: text.trim(),
+      user_context: {
+        goal: goal || null,
+        daily_calories: plan?.daily_calories ?? null,
+        protein_target: plan?.protein_g ?? null,
+      },
+    });
+    if (r) {
+      setElapsed((performance.now() - t0) / 1000);
+      onResult(r);
+      setConfetti(true);
+      setTimeout(() => setConfetti(false), 1800);
+    } else {
+      toast.error("Could not analyse that meal — try a different description.");
+    }
+  };
+
+  const remaining = plan && result ? Math.max(0, plan.daily_calories - result.calories) : 0;
+
+  const scoreColor =
+    result && result.food_score >= 8 ? "var(--forest)" :
+    result && result.food_score >= 5 ? "var(--gold)" :
+    "var(--coral)";
+
+  return (
+    <div className="pt-2 relative">
+      <h2 className="font-display font-bold text-[30px] text-[color:var(--ink)] leading-[1.1]">
+        Try the AI
+        <br />
+        right now
+      </h2>
+      <p className="mt-3 font-body text-[15px] text-[color:var(--ink-mid)] leading-relaxed">
+        Describe any meal — even a complex one — and watch NutriAI analyse it
+        in under 3 seconds.
+      </p>
+
+      <div className="mt-5 -mx-6 px-6 overflow-x-auto no-scrollbar">
+        <div className="flex gap-2 pb-1">
+          {DEMO_CHIPS.map((c) => (
+            <button
+              key={c}
+              onClick={() => setText(c)}
+              className="shrink-0 rounded-full border border-[color:var(--cream-border)] bg-white px-4 py-2 text-[13px] font-medium text-[color:var(--ink-mid)] hover:border-[color:var(--forest)] transition-colors"
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 relative rounded-[14px] bg-white border-[1.5px] border-[color:var(--cream-border)] focus-within:border-[color:var(--forest)] transition-colors shadow-elev-sm">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Describe what you ate... (e.g. 'A bowl of pasta with tomato sauce and parmesan, glass of wine')"
+          className="w-full min-h-[100px] resize-none bg-transparent px-4 pt-4 pb-12 font-body text-[15px] text-[color:var(--ink)] placeholder:text-[color:var(--ink-light)] focus:outline-none"
+        />
+        <div className="absolute bottom-2 right-3 flex items-center gap-1 text-[color:var(--ink-light)]">
+          <button type="button" className="h-8 w-8 grid place-items-center rounded-full hover:bg-[color:var(--cream-dark)] transition-colors" aria-label="Voice (coming soon)">
+            <Mic className="h-4 w-4" />
+          </button>
+          <button type="button" className="h-8 w-8 grid place-items-center rounded-full hover:bg-[color:var(--cream-dark)] transition-colors" aria-label="Photo (coming soon)">
+            <Camera className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      <p className="mt-2 text-center font-body text-[12px] text-[color:var(--ink-light)]">
+        🤖 Powered by Claude AI — the world's most capable AI
+      </p>
+
+      <button
+        onClick={submit}
+        disabled={!text.trim() || loading}
+        className={cn(
+          "mt-3 w-full h-[52px] rounded-[14px] font-body font-semibold text-[15px] text-white transition-all",
+          "bg-[color:var(--forest)] hover:bg-[color:var(--forest-mid)] active:scale-[0.98]",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+        )}
+      >
+        {loading ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            Claude is thinking
+            <span className="inline-flex gap-0.5">
+              <span className="animate-pulse">.</span>
+              <span className="animate-pulse" style={{ animationDelay: "150ms" }}>.</span>
+              <span className="animate-pulse" style={{ animationDelay: "300ms" }}>.</span>
+            </span>
+          </span>
+        ) : (
+          <>Analyse with AI →</>
+        )}
+      </button>
+
+      {result && (
+        <div className="mt-6 animate-fade-up rounded-[20px] overflow-hidden shadow-elev-lg border border-[color:var(--cream-border)]">
+          <div
+            className="px-5 py-4 text-white flex items-center gap-3"
+            style={{ background: "var(--gradient-hero)" }}
+          >
+            <span className="text-[40px] leading-none">{result.emoji || "🍽️"}</span>
+            <div className="flex-1 font-display font-bold text-[20px] leading-tight">
+              {result.meal_name}
+            </div>
+          </div>
+          <div className="bg-white p-5">
+            <div className="flex items-start gap-4">
+              <div
+                className="h-11 w-11 shrink-0 rounded-full grid place-items-center text-white font-display font-bold text-[16px]"
+                style={{ background: scoreColor }}
+              >
+                {result.food_score}
+              </div>
+              <p className="font-body italic text-[14px] text-[color:var(--ink-mid)] leading-snug">
+                {result.verdict}
+              </p>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <MacroPill label="Calories" value={`${Math.round(result.calories)}`} dot="var(--forest)" />
+              <MacroPill label="Protein" value={`${Math.round(result.protein)}g`} dot="#7c3aed" />
+              <MacroPill label="Carbs" value={`${Math.round(result.carbs)}g`} dot="#2563eb" />
+              <MacroPill label="Fat" value={`${Math.round(result.fat)}g`} dot="var(--gold)" />
+            </div>
+            {plan && (
+              <>
+                <div className="my-4 h-px bg-[color:var(--cream-border)]" />
+                <p className="font-body text-[13px] text-[color:var(--ink-mid)]">
+                  How does this fit your day? <strong className="text-[color:var(--ink)]">{Math.round(result.calories)} kcal</strong> leaves <strong className="text-[color:var(--forest)]">{remaining.toLocaleString()} kcal</strong> for the rest of today.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div className="mt-5 animate-fade-up">
+          <div className="flex items-center gap-2">
+            <span className="h-7 w-7 rounded-full bg-[color:var(--forest)] grid place-items-center text-white">
+              <Check className="h-4 w-4" strokeWidth={3} />
+            </span>
+            <span className="font-body font-semibold text-[14px] text-[color:var(--forest)]">
+              Logged to your diary ✅
+            </span>
+          </div>
+          {elapsed != null && (
+            <p className="mt-1.5 font-body text-[13px] text-[color:var(--ink-mid)]">
+              That took {elapsed.toFixed(1)}s. Traditional apps take 3–5 minutes.
+            </p>
+          )}
+        </div>
+      )}
+
+      {confetti && <Confetti />}
+    </div>
+  );
+}
+
+function MacroPill({ label, value, dot }: { label: string; value: string; dot: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-full bg-[color:var(--cream)] px-3 py-2">
+      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: dot }} />
+      <span className="font-body text-[12px] text-[color:var(--ink-light)]">{label}</span>
+      <span className="ml-auto font-body font-semibold text-[13px] text-[color:var(--ink)]">{value}</span>
+    </div>
+  );
+}
+
+function Confetti() {
+  const pieces = Array.from({ length: 36 });
+  const colors = ["var(--forest)", "var(--forest-light)", "var(--gold)", "var(--gold-light)"];
+  return (
+    <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+      {pieces.map((_, i) => {
+        const left = Math.random() * 100;
+        const dur = 1.2 + Math.random() * 0.8;
+        const delay = Math.random() * 0.3;
+        const size = 6 + Math.random() * 6;
+        const color = colors[i % colors.length];
+        const rot = Math.random() * 360;
+        return (
+          <span
+            key={i}
+            className="absolute top-0 block"
+            style={{
+              left: `${left}%`,
+              width: size,
+              height: size * 1.6,
+              background: color,
+              transform: `rotate(${rot}deg)`,
+              animation: `confetti-fall ${dur}s ${delay}s cubic-bezier(0.2, 0.7, 0.4, 1) forwards`,
+              borderRadius: 2,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/* ----------------- PLACEHOLDER (step 12) ----------------- */
 
 function PlaceholderStep({
   step,
