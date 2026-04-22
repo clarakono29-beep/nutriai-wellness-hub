@@ -159,6 +159,14 @@ function Onboarding() {
         return !!a.goal;
       case 4:
         return a.name.trim().length >= 2;
+      case 5:
+        return !!a.gender;
+      case 6:
+        return a.age !== "" && a.height_cm !== "" && a.weight_kg !== "" && a.target_weight_kg !== "";
+      case 7:
+        return !!a.activity_level;
+      case 8:
+        return a.diet_preferences.length >= 1;
       default:
         return true;
     }
@@ -270,7 +278,31 @@ function Onboarding() {
             onChange={(name) => setA({ ...a, name })}
           />
         )}
-        {step >= 5 && step < TOTAL_STEPS && (
+        {step === 5 && (
+          <GenderStep
+            value={a.gender}
+            onChange={(g) => setA({ ...a, gender: g })}
+          />
+        )}
+        {step === 6 && (
+          <BodyStep
+            answers={a}
+            onChange={(patch) => setA({ ...a, ...patch })}
+          />
+        )}
+        {step === 7 && (
+          <ActivityStep
+            value={a.activity_level}
+            onChange={(v) => setA({ ...a, activity_level: v })}
+          />
+        )}
+        {step === 8 && (
+          <DietStep
+            selected={a.diet_preferences}
+            onChange={(prefs) => setA({ ...a, diet_preferences: prefs })}
+          />
+        )}
+        {step >= 9 && step < TOTAL_STEPS && (
           <PlaceholderStep step={step} onSkip={goNext} />
         )}
         {step === TOTAL_STEPS && (
@@ -602,7 +634,442 @@ function NameStep({
   );
 }
 
-/* ----------------- PLACEHOLDER (steps 5–12) ----------------- */
+/* ----------------- STEP 5: GENDER ----------------- */
+
+const GENDERS: { v: Gender; emoji: string; label: string }[] = [
+  { v: "female", emoji: "👩", label: "Female" },
+  { v: "male", emoji: "👨", label: "Male" },
+  { v: "other", emoji: "🧑", label: "Non-binary / Other" },
+];
+
+function GenderStep({
+  value,
+  onChange,
+}: {
+  value: Answers["gender"];
+  onChange: (g: Gender) => void;
+}) {
+  return (
+    <div className="pt-2">
+      <h2 className="font-display font-bold text-[30px] text-[color:var(--ink)] leading-[1.1]">
+        Biological sex
+      </h2>
+      <p className="mt-3 font-body text-[15px] text-[color:var(--ink-mid)] leading-relaxed">
+        This affects your metabolic rate calculation — it's medically
+        significant, not a label.
+      </p>
+
+      <div className="mt-6 space-y-3">
+        {GENDERS.map((g) => {
+          const active = value === g.v;
+          return (
+            <button
+              key={g.v}
+              onClick={() => onChange(g.v)}
+              className={cn(
+                "w-full h-[88px] px-4 rounded-[14px] flex items-center gap-4 transition-all duration-200 ease-luxury active:scale-[0.99]",
+                "border-[1.5px]",
+                active
+                  ? "bg-[#F0F5F1] border-[color:var(--forest)] shadow-elev-sm"
+                  : "bg-white border-[color:var(--cream-border)] shadow-elev-sm",
+              )}
+            >
+              <div
+                className="h-14 w-14 shrink-0 rounded-full grid place-items-center text-[30px] bg-[color:var(--cream-dark)]"
+              >
+                {g.emoji}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="font-body font-semibold text-[17px] text-[color:var(--ink)] leading-tight">
+                  {g.label}
+                </div>
+              </div>
+              <div
+                className={cn(
+                  "h-6 w-6 shrink-0 rounded-full grid place-items-center transition-colors",
+                  active
+                    ? "border-[7px] border-[color:var(--forest)]"
+                    : "border-[1.5px] border-[color:var(--cream-border)]",
+                )}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      {value && (
+        <div className="mt-6 rounded-[14px] p-5 animate-fade-up border-l-4 border-[color:var(--forest)]"
+          style={{ background: "color-mix(in oklab, var(--forest) 6%, white)" }}
+        >
+          <p className="font-body text-[13px] leading-relaxed text-[color:var(--forest)]">
+            🧬 We use the <strong className="font-semibold">Mifflin-St Jeor equation</strong> — the gold standard for metabolic rate calculation used by registered dietitians worldwide.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ----------------- STEP 6: BODY METRICS ----------------- */
+
+function cmToFtIn(cm: number) {
+  const totalIn = cm / 2.54;
+  const ft = Math.floor(totalIn / 12);
+  const inch = Math.round(totalIn - ft * 12);
+  return `${ft}'${inch}"`;
+}
+
+function kgToLbs(kg: number) {
+  return `${Math.round(kg * 2.20462)} lbs`;
+}
+
+function MetricSlider({
+  label,
+  value,
+  min,
+  max,
+  unit,
+  conversion,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
+  conversion?: string;
+  onChange: (v: number) => void;
+}) {
+  const pct = ((value - min) / (max - min)) * 100;
+  return (
+    <div className="rounded-[14px] bg-white border border-[color:var(--cream-border)] p-5 shadow-elev-sm">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[12px] font-medium uppercase tracking-widest text-[color:var(--ink-light)]">
+          {label}
+        </span>
+        {conversion && (
+          <span className="text-[12px] text-[color:var(--ink-light)]">{conversion}</span>
+        )}
+      </div>
+      <div className="mt-1 font-display font-bold text-[28px] text-[color:var(--forest)] leading-tight">
+        {value} <span className="text-[16px] font-body font-medium text-[color:var(--ink-light)]">{unit}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="luxury-range mt-3"
+        style={{
+          background: `linear-gradient(to right, var(--forest) 0%, var(--forest) ${pct}%, var(--cream-border) ${pct}%, var(--cream-border) 100%)`,
+        }}
+      />
+      <div className="mt-1 flex justify-between text-[11px] text-[color:var(--ink-light)]">
+        <span>{min}</span>
+        <span>{max}</span>
+      </div>
+    </div>
+  );
+}
+
+function BodyStep({
+  answers,
+  onChange,
+}: {
+  answers: Answers;
+  onChange: (patch: Partial<Answers>) => void;
+}) {
+  // Initialize defaults on first render
+  useEffect(() => {
+    const patch: Partial<Answers> = {};
+    if (answers.age === "") patch.age = 28;
+    if (answers.height_cm === "") patch.height_cm = 170;
+    if (answers.weight_kg === "") patch.weight_kg = 75;
+    if (answers.target_weight_kg === "") {
+      const w = (answers.weight_kg === "" ? 75 : Number(answers.weight_kg));
+      patch.target_weight_kg =
+        answers.goal === "lose" ? Math.max(40, w - 10) :
+        answers.goal === "gain" ? Math.min(200, w + 8) :
+        w;
+    }
+    if (Object.keys(patch).length) onChange(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const age = Number(answers.age) || 28;
+  const height = Number(answers.height_cm) || 170;
+  const weight = Number(answers.weight_kg) || 75;
+  const target = Number(answers.target_weight_kg) || weight;
+
+  const diff = Math.abs(weight - target);
+  const weeks = Math.round((diff * 7700) / 3500 / 7);
+
+  const targetLabel = answers.goal === "lose" ? "Goal weight" :
+    answers.goal === "gain" ? "Goal weight" :
+    "Target weight";
+
+  return (
+    <div className="pt-2">
+      <h2 className="font-display font-bold text-[30px] text-[color:var(--ink)] leading-[1.1]">
+        Your body profile
+      </h2>
+      <p className="mt-3 font-body text-[15px] text-[color:var(--ink-mid)] leading-relaxed">
+        For scientifically accurate calorie and macro targets. Everything stays
+        private.
+      </p>
+
+      <div className="mt-6 space-y-3">
+        <MetricSlider
+          label="Age"
+          value={age}
+          min={15}
+          max={80}
+          unit="years"
+          onChange={(v) => onChange({ age: v })}
+        />
+        <MetricSlider
+          label="Height"
+          value={height}
+          min={140}
+          max={220}
+          unit="cm"
+          conversion={cmToFtIn(height)}
+          onChange={(v) => onChange({ height_cm: v })}
+        />
+        <MetricSlider
+          label="Current weight"
+          value={weight}
+          min={40}
+          max={200}
+          unit="kg"
+          conversion={kgToLbs(weight)}
+          onChange={(v) => onChange({ weight_kg: v })}
+        />
+        <MetricSlider
+          label={targetLabel}
+          value={target}
+          min={40}
+          max={200}
+          unit="kg"
+          conversion={kgToLbs(target)}
+          onChange={(v) => onChange({ target_weight_kg: v })}
+        />
+      </div>
+
+      <div className="mt-6 rounded-[14px] p-5 animate-fade-up bg-[color:var(--gold-light)] border border-[color:var(--gold)]/30">
+        <p className="font-body text-[14px] leading-relaxed text-[color:var(--ink)]">
+          {answers.goal === "lose" && target < weight && (
+            <>You want to lose <strong className="font-semibold text-[color:var(--forest)]">{diff} kg</strong> — about <strong className="font-semibold text-[color:var(--forest)]">{weeks} weeks</strong> at a healthy pace</>
+          )}
+          {answers.goal === "gain" && target > weight && (
+            <>You want to gain <strong className="font-semibold text-[color:var(--forest)]">{diff} kg</strong> — about <strong className="font-semibold text-[color:var(--forest)]">{weeks} weeks</strong> building muscle</>
+          )}
+          {(answers.goal === "maintain" || answers.goal === "health" || diff === 0) && (
+            <>Maintaining <strong className="font-semibold text-[color:var(--forest)]">{weight} kg</strong> — we'll calculate your exact needs</>
+          )}
+          {answers.goal === "lose" && target >= weight && diff > 0 && (
+            <>Your goal weight is higher than current — adjust the slider to reflect your target</>
+          )}
+          {answers.goal === "gain" && target <= weight && diff > 0 && (
+            <>Your goal weight is lower than current — adjust the slider to reflect your target</>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------- STEP 7: ACTIVITY ----------------- */
+
+const ACTIVITIES: {
+  v: ActivityLevel;
+  emoji: string;
+  title: string;
+  sub: string;
+  mult: number;
+}[] = [
+  { v: "sedentary", emoji: "🛋️", title: "Sedentary", sub: "Desk job, little or no exercise", mult: 1.2 },
+  { v: "light", emoji: "🚶", title: "Lightly active", sub: "1-3 light workouts or walks per week", mult: 1.375 },
+  { v: "moderate", emoji: "🏃", title: "Moderately active", sub: "3-5 workouts per week", mult: 1.55 },
+  { v: "active", emoji: "⚡", title: "Very active", sub: "Daily intense exercise or physical job", mult: 1.725 },
+  { v: "very_active", emoji: "🏋️", title: "Athlete", sub: "Twice daily training or extreme physical work", mult: 1.9 },
+];
+
+function ActivityStep({
+  value,
+  onChange,
+}: {
+  value: Answers["activity_level"];
+  onChange: (v: ActivityLevel) => void;
+}) {
+  const selected = ACTIVITIES.find((a) => a.v === value);
+  const estTdee = selected ? Math.round(1800 * selected.mult) : 0;
+
+  return (
+    <div className="pt-2">
+      <h2 className="font-display font-bold text-[30px] text-[color:var(--ink)] leading-[1.1]">
+        How active are you?
+      </h2>
+      <p className="mt-3 font-body text-[15px] text-[color:var(--ink-mid)] leading-relaxed">
+        Be honest — most people underestimate this, which is the #1 reason
+        diets fail.
+      </p>
+
+      <div className="mt-6 space-y-3">
+        {ACTIVITIES.map((opt) => {
+          const active = value === opt.v;
+          return (
+            <button
+              key={opt.v}
+              onClick={() => onChange(opt.v)}
+              className={cn(
+                "w-full px-4 py-4 rounded-[14px] flex items-center gap-4 transition-all duration-200 ease-luxury active:scale-[0.99]",
+                "border-[1.5px]",
+                active
+                  ? "bg-[#F0F5F1] border-[color:var(--forest)] shadow-elev-sm"
+                  : "bg-white border-[color:var(--cream-border)] shadow-elev-sm",
+              )}
+            >
+              <div className="h-12 w-12 shrink-0 rounded-full grid place-items-center text-[26px] bg-[color:var(--cream-dark)]">
+                {opt.emoji}
+              </div>
+              <div className="flex-1 text-left">
+                <div className="font-body font-semibold text-[16px] text-[color:var(--ink)] leading-tight">
+                  {opt.title}
+                </div>
+                <div className="mt-0.5 font-body text-[13px] text-[color:var(--ink-mid)] leading-snug">
+                  {opt.sub}
+                </div>
+              </div>
+              <span
+                className="shrink-0 px-2.5 py-1 rounded-full text-[12px] font-semibold"
+                style={{
+                  background: "color-mix(in oklab, var(--forest) 10%, white)",
+                  color: "var(--forest)",
+                }}
+              >
+                ×{opt.mult}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {selected && (
+        <div className="mt-6 rounded-[14px] p-5 animate-fade-up bg-[color:var(--sage-light)] border-l-4 border-[color:var(--forest)]">
+          <p className="font-body text-[14px] leading-relaxed text-[color:var(--forest)]">
+            💡 At <strong className="font-semibold">{selected.title.toLowerCase()}</strong>, your body naturally burns approximately{" "}
+            <strong className="font-semibold">{estTdee.toLocaleString()} kcal</strong> per day. We'll refine this with your exact measurements.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ----------------- STEP 8: DIET PREFERENCES ----------------- */
+
+const DIETS = [
+  { id: "none", emoji: "🍽️", label: "No restrictions", sub: "Eat everything" },
+  { id: "vegan", emoji: "🌱", label: "Vegan", sub: "Plant-based only" },
+  { id: "vegetarian", emoji: "🥗", label: "Vegetarian", sub: "No meat or fish" },
+  { id: "keto", emoji: "🥑", label: "Keto", sub: "High fat, very low carb" },
+  { id: "paleo", emoji: "🥩", label: "Paleo", sub: "Whole foods, unprocessed" },
+  { id: "mediterranean", emoji: "🫒", label: "Mediterranean", sub: "Balanced, anti-inflammatory" },
+  { id: "gluten_free", emoji: "🌾", label: "Gluten-free", sub: "No gluten" },
+  { id: "dairy_free", emoji: "🥛", label: "Dairy-free", sub: "No dairy products" },
+];
+
+function DietStep({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (prefs: string[]) => void;
+}) {
+  const toggle = (id: string) => {
+    if (id === "none") {
+      onChange(selected.includes("none") ? [] : ["none"]);
+      return;
+    }
+    const without = selected.filter((x) => x !== "none");
+    if (without.includes(id)) {
+      onChange(without.filter((x) => x !== id));
+    } else {
+      onChange([...without, id]);
+    }
+  };
+
+  return (
+    <div className="pt-2">
+      <h2 className="font-display font-bold text-[30px] text-[color:var(--ink)] leading-[1.1]">
+        Your dietary style
+      </h2>
+      <p className="mt-3 font-body text-[15px] text-[color:var(--ink-mid)] leading-relaxed">
+        Every recipe, meal plan, and food recommendation instantly adapts to
+        your preferences.
+      </p>
+
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        {DIETS.map((d) => {
+          const active = selected.includes(d.id);
+          return (
+            <button
+              key={d.id}
+              onClick={() => toggle(d.id)}
+              className={cn(
+                "relative px-3 py-5 rounded-[14px] flex flex-col items-center text-center transition-all duration-200 ease-luxury active:scale-[0.98]",
+                active
+                  ? "border-2 border-[color:var(--forest)] shadow-elev-sm"
+                  : "border-[1.5px] border-[color:var(--cream-border)] bg-white shadow-elev-sm",
+              )}
+              style={active ? { background: "color-mix(in oklab, var(--forest) 8%, white)" } : undefined}
+            >
+              {active && (
+                <span className="absolute top-2 left-2 h-5 w-5 rounded-full bg-[color:var(--forest)] grid place-items-center">
+                  <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                </span>
+              )}
+              <span className="text-[36px] leading-none">{d.emoji}</span>
+              <div className="mt-2 font-body font-semibold text-[14px] text-[color:var(--ink)]">
+                {d.label}
+              </div>
+              <div className="mt-0.5 font-body text-[12px] text-[color:var(--ink-mid)] leading-snug">
+                {d.sub}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {selected.length > 0 && (
+        <div className="mt-6 animate-fade-up">
+          <div className="text-[11px] uppercase tracking-widest font-semibold text-[color:var(--ink-light)] mb-2">
+            Your selection
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selected.map((id) => {
+              const d = DIETS.find((x) => x.id === id);
+              if (!d) return null;
+              return (
+                <span
+                  key={id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold bg-[color:var(--forest)] text-white"
+                >
+                  <span>{d.emoji}</span>
+                  {d.label}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ----------------- PLACEHOLDER (steps 9–12) ----------------- */
 
 function PlaceholderStep({
   step,
