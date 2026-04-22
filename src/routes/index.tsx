@@ -85,7 +85,21 @@ function Hero() {
           <Wordmark className="text-white text-[18px]" />
         </div>
         <div className="flex items-center gap-3">
-          {import.meta.env.DEV && <DevBypassLink />}
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.localStorage.setItem("dev_bypass_auth", "1");
+                  window.location.assign("/app");
+                }
+              }}
+              className="font-body text-[12px] px-2.5 py-1 rounded-full border border-[color:var(--gold)]/60 text-[color:var(--gold-light)] hover:bg-white/10 transition-colors"
+              title="Dev only: skip auth and enter the app"
+            >
+              Dev: Skip auth →
+            </button>
+          )}
           <Link
             to="/signin"
             className="font-body text-[15px] text-[color:var(--sage-light)] hover:text-white transition-colors"
