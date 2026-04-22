@@ -335,6 +335,24 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
 
     const partial = stripStopMarker(last.content);
 
+    // Re-applies the stop marker to the partial bubble so the user can press
+    // Retry to call continueStream again from the same anchor.
+    const restoreStopMarker = () => {
+      setMessages((prev) => {
+        const copy = [...prev];
+        const tail = copy[copy.length - 1];
+        if (tail?.role === "assistant") {
+          const finalized = (tail.content || "").trimEnd();
+          copy[copy.length - 1] = {
+            ...tail,
+            content: finalized ? `${finalized}${STOPPED_SUFFIX}` : STOPPED_PLACEHOLDER,
+          };
+        }
+        return copy;
+      });
+      setFollowups([CONTINUE_LABEL, "Try a different question", "Start over"]);
+    };
+
     // Update the last bubble in place: remove the stop marker, keep the partial text.
     setMessages((prev) => {
       const copy = [...prev];
@@ -346,6 +364,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
     });
 
     haptics.light();
+    setContinueError(null);
     setFollowups([]);
     setLoading(true);
     setStreaming(true);
