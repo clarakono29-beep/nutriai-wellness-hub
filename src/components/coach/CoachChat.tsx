@@ -573,6 +573,23 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
+        {/* Retry banner — appears when a Continue attempt fails */}
+        {continueError && (
+          <div className="mx-3 mb-2 px-3 py-2 rounded-xl bg-[color:var(--coral)]/10 border border-[color:var(--coral)]/30 flex items-center justify-between gap-3 animate-fade-up">
+            <span className="text-[12px] text-[color:var(--ink)] leading-snug">
+              {continueError}
+            </span>
+            <button
+              onClick={continueStream}
+              disabled={loading}
+              className="shrink-0 inline-flex items-center gap-1 h-7 px-3 rounded-full bg-[color:var(--forest)] text-white text-[12px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Quick prompts / follow-ups */}
         {chips.length > 0 && (
           <div className="px-3 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
