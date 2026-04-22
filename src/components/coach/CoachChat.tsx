@@ -1,22 +1,50 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Brain, Send, X, Loader2, Sparkles } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useFoodLog } from "@/hooks/useFoodLog";
+import { useStreak } from "@/hooks/useStreak";
 import { fmtKcal } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/haptics";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-const QUICK_PROMPTS = [
-  "What should I eat for dinner?",
-  "How am I doing today?",
-  "Best foods for my goal?",
-];
-
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nutrition-coach`;
+
+function greetingFor(date = new Date()) {
+  const h = date.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function nextMealFor(date = new Date()) {
+  const h = date.getHours();
+  if (h < 10) return "breakfast";
+  if (h < 14) return "lunch";
+  if (h < 20) return "dinner";
+  return "a snack";
+}
+
+// Generic follow-up chips. The model sometimes ends with a question; these are
+// always-safe quick replies that keep the conversation flowing without an extra
+// API call to generate suggestions.
+function followupsFor(lastAssistant: string): string[] {
+  const t = lastAssistant.toLowerCase();
+  if (t.includes("dinner") || t.includes("lunch") || t.includes("breakfast") || t.includes("snack")) {
+    return ["Sounds good!", "Give me another option", "Make it higher protein"];
+  }
+  if (t.includes("protein")) {
+    return ["More high-protein ideas", "Vegetarian options?", "What about carbs?"];
+  }
+  if (t.includes("water") || t.includes("hydrat")) {
+    return ["How much should I drink?", "Tips to drink more"];
+  }
+  return ["Tell me more", "Give me an example", "What should I eat next?"];
+}
 
 export function CoachChat() {
   const [open, setOpen] = useState(false);
@@ -24,9 +52,12 @@ export function CoachChat() {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          haptics.light();
+          setOpen(true);
+        }}
         aria-label="Open nutrition coach"
-        className="fixed right-4 bottom-[170px] z-30 h-12 w-12 rounded-full bg-gradient-cta text-white grid place-items-center shadow-elev-cta active:scale-95 ease-luxury transition-transform"
+        className="fixed right-4 bottom-[170px] z-30 h-[52px] w-[52px] rounded-full bg-gradient-cta text-white grid place-items-center shadow-elev-cta active:scale-95 ease-luxury transition-transform animate-pulse-glow"
         style={{ marginBottom: "env(safe-area-inset-bottom)" }}
       >
         <Brain className="h-5 w-5" />
@@ -39,12 +70,42 @@ export function CoachChat() {
 function CoachPanel({ onClose }: { onClose: () => void }) {
   const { profile } = useProfile();
   const { logs, totals } = useFoodLog();
+  const { streak } = useStreak();
+
+  const target = profile?.daily_calories ?? 2000;
+  const remaining = Math.max(0, target - totals.calories);
+  const onTrack = totals.calories >= target * 0.4 && totals.calories <= target * 1.05;
+
+  const opening = useMemo(() => {
+    const firstName = profile?.name?.split(" ")[0] ?? "there";
+    const greeting = greetingFor();
+    const eaten = fmtKcal(totals.calories);
+    const left = fmtKcal(remaining);
+    const status =
+      logs.length === 0
+        ? "You haven't logged anything yet — let's start strong. What can I help you with?"
+        : onTrack
+          ? "You're on track — great work! What can I help you with?"
+          : totals.calories < target * 0.4
+            ? "Looks like you're behind for the day — want some quick meal ideas?"
+            : "You're a bit over for today — want lighter ideas for tomorrow?";
+    return `${greeting}, ${firstName}! 👋\nYou've had ${eaten} kcal today, with ${left} remaining.\n${status}`;
+  }, [profile?.name, totals.calories, remaining, target, logs.length, onTrack]);
+
+  const initialQuickPrompts = useMemo(
+    () => [
+      "How am I doing today?",
+      `What should I eat for ${nextMealFor()}?`,
+      "Give me a high protein dinner idea",
+      `Why does ${profile?.goal === "lose" ? "protein" : "fibre"} matter for my goal?`,
+    ],
+    [profile?.goal],
+  );
+
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content: `Hi${profile?.name ? ` ${profile.name.split(" ")[0]}` : ""} — I'm your nutrition coach. Ask me anything about your day, your goal, or what to eat next.`,
-    },
+    { role: "assistant", content: opening },
   ]);
+  const [followups, setFollowups] = useState<string[]>(initialQuickPrompts);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,24 +118,33 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
     const summary =
       logs.length === 0
         ? "no entries yet"
-        : `${logs.length} items, ${fmtKcal(totals.calories)} kcal, ${Math.round(totals.protein)}g protein`;
+        : `${logs.length} items, ${fmtKcal(totals.calories)} kcal, ${Math.round(totals.protein)}g protein, ${Math.round(totals.carbs)}g carbs, ${Math.round(totals.fat)}g fat`;
     return {
       name: profile?.name,
       goal: profile?.goal,
       daily_calories: profile?.daily_calories,
       protein_target: profile?.protein_g,
+      carbs_target: profile?.carbs_g,
+      fat_target: profile?.fat_g,
+      streak: streak.current_streak,
+      diet_preferences: profile?.diet_preferences,
       todays_log_summary: summary,
     };
   };
 
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
+    haptics.light();
     const next: ChatMessage[] = [...messages, { role: "user", content: text.trim() }];
     setMessages(next);
+    setFollowups([]);
     setInput("");
     setLoading(true);
 
     try {
+      // Send only the last 10 messages for context window control
+      const trimmed = next.slice(-10).map(({ role, content }) => ({ role, content }));
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
@@ -82,7 +152,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
-          messages: next.map(({ role, content }) => ({ role, content })),
+          messages: trimmed,
           user_context: buildContext(),
         }),
       });
@@ -100,7 +170,6 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
         return;
       }
 
-      // Add an empty assistant message we'll fill as tokens stream
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       const reader = resp.body.getReader();
@@ -141,12 +210,14 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
               });
             }
           } catch {
-            // partial JSON, push back
             buf = line + "\n" + buf;
             break;
           }
         }
       }
+
+      // After streaming completes, set context-aware follow-up chips
+      setFollowups(followupsFor(acc));
     } catch (e) {
       console.error(e);
       appendAssistant("Network hiccup — try again.");
@@ -159,6 +230,9 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
     setMessages((prev) => [...prev, { role: "assistant", content }]);
   };
 
+  const showQuickPrompts = messages.length === 1 && !loading;
+  const chips = showQuickPrompts ? initialQuickPrompts : followups;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center animate-fade-in">
       <button
@@ -167,17 +241,17 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
         className="absolute inset-0 bg-black/40"
       />
       <div
-        className="relative w-full max-w-[430px] h-[92vh] bg-[color:var(--cream)] rounded-t-[28px] shadow-elev-lg flex flex-col animate-fade-up"
+        className="relative w-full max-w-[430px] h-[92vh] bg-[color:var(--cream)] rounded-t-[28px] shadow-elev-lg flex flex-col animate-slide-up-panel"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {/* Header */}
         <div className="bg-gradient-cta text-white px-5 py-4 rounded-t-[28px] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🧠</span>
+            <span className="text-lg" aria-hidden>🧠</span>
             <div>
-              <div className="font-display text-[18px] leading-none">Your Nutrition Coach</div>
-              <div className="text-[11px] text-white/70 mt-1 uppercase tracking-widest">
-                Powered by Lovable AI
+              <div className="font-display text-[20px] leading-none">Your Coach</div>
+              <div className="text-[10px] text-white/70 mt-1.5 uppercase tracking-widest">
+                Powered by AI
               </div>
             </div>
           </div>
@@ -202,19 +276,21 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
           )}
         </div>
 
-        {/* Quick prompts */}
-        <div className="px-3 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
-          {QUICK_PROMPTS.map((p) => (
-            <button
-              key={p}
-              onClick={() => send(p)}
-              disabled={loading}
-              className="shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full bg-white border border-[color:var(--cream-border)] text-[12px] text-[color:var(--ink-mid)] hover:border-[color:var(--forest)] hover:text-[color:var(--forest)] transition-colors disabled:opacity-50"
-            >
-              <Sparkles className="h-3 w-3" /> {p}
-            </button>
-          ))}
-        </div>
+        {/* Quick prompts / follow-ups */}
+        {chips.length > 0 && (
+          <div className="px-3 pb-2 flex gap-2 overflow-x-auto no-scrollbar">
+            {chips.map((p) => (
+              <button
+                key={p}
+                onClick={() => send(p)}
+                disabled={loading}
+                className="shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full bg-white border border-[color:var(--cream-border)] text-[12px] text-[color:var(--ink-mid)] hover:border-[color:var(--forest)] hover:text-[color:var(--forest)] transition-colors disabled:opacity-50"
+              >
+                <Sparkles className="h-3 w-3" /> {p}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Input */}
         <div className="border-t border-[color:var(--cream-border)] bg-white p-3 flex items-center gap-2">
@@ -228,13 +304,13 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
                 send(input);
               }
             }}
-            placeholder="Ask your coach anything…"
+            placeholder="Ask your coach..."
             className="flex-1 resize-none bg-transparent border-0 outline-none text-[15px] text-[color:var(--ink)] placeholder:text-[color:var(--ink-light)] py-2 px-2 max-h-[120px]"
           />
           <button
             onClick={() => send(input)}
             disabled={!input.trim() || loading}
-            className="h-11 w-11 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-sm disabled:opacity-50 active:scale-95 ease-luxury transition-transform"
+            className="h-10 w-10 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-sm disabled:opacity-50 active:scale-95 ease-luxury transition-transform"
             aria-label="Send"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -248,13 +324,13 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
 function Bubble({ role, content }: { role: "user" | "assistant"; content: string }) {
   const isUser = role === "user";
   return (
-    <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
+    <div className={cn("flex animate-fade-up", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[80%] px-4 py-2.5 text-[14px] leading-relaxed whitespace-pre-wrap",
+          "max-w-[80%] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap",
           isUser
-            ? "bg-white border border-[color:var(--cream-border)] rounded-2xl rounded-br-sm text-[color:var(--ink)]"
-            : "bg-[color:var(--sage-light)] text-[color:var(--forest)] rounded-2xl rounded-bl-sm",
+            ? "bg-[color:var(--forest)] text-white rounded-[20px] rounded-br-[4px]"
+            : "bg-white border border-[color:var(--cream-border)] text-[color:var(--ink)] rounded-[20px] rounded-bl-[4px] shadow-elev-sm",
         )}
       >
         {content || (

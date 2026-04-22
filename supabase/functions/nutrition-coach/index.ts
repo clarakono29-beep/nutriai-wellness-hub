@@ -17,6 +17,10 @@ interface Body {
     goal?: string | null;
     daily_calories?: number | null;
     protein_target?: number | null;
+    carbs_target?: number | null;
+    fat_target?: number | null;
+    streak?: number | null;
+    diet_preferences?: string[] | null;
     todays_log_summary?: string | null;
   };
 }
@@ -36,14 +40,30 @@ serve(async (req) => {
     const body = (await req.json()) as Body;
     const ctx = body.user_context ?? {};
 
-    const systemPrompt =
-      "You are a supportive, knowledgeable nutrition coach for NutriAI, a luxury wellness app. " +
-      `The user's goal is "${ctx.goal ?? "general health"}". ` +
-      `Their daily target is ${ctx.daily_calories ?? "unknown"} kcal and ${ctx.protein_target ?? "unknown"} g protein. ` +
-      `Today's log so far: ${ctx.todays_log_summary ?? "no entries yet"}. ` +
-      "Give concise, actionable, encouraging advice. Keep responses under 100 words. " +
-      "Use plain markdown (lists, bold) sparingly. Never recommend calorie restriction below 1200 kcal. " +
-      "Always be positive. Never invent macros for foods the user did not log.";
+    const diet = (ctx.diet_preferences ?? []).filter(Boolean).join(", ") || "no specific preferences";
+    const systemPrompt = [
+      "You are a warm, knowledgeable, and encouraging personal nutrition coach for NutriAI.",
+      "Your client's profile:",
+      `- Name: ${ctx.name ?? "the user"}`,
+      `- Goal: ${ctx.goal ?? "general health"}`,
+      `- Daily calorie target: ${ctx.daily_calories ?? "unknown"} kcal`,
+      `- Macros: ${ctx.protein_target ?? "?"}g protein, ${ctx.carbs_target ?? "?"}g carbs, ${ctx.fat_target ?? "?"}g fat`,
+      `- Today's intake so far: ${ctx.todays_log_summary ?? "no entries yet"}`,
+      `- Current streak: ${ctx.streak ?? 0} days`,
+      `- Diet: ${diet}`,
+      "",
+      "Guidelines:",
+      "- Keep responses concise (under 150 words unless explaining something complex)",
+      "- Always be encouraging and positive",
+      "- Give specific, actionable advice",
+      "- Reference their actual data when relevant",
+      "- If they ask about specific foods, give honest nutritional guidance",
+      "- Never recommend below 1200 kcal/day",
+      "- If they mention medical conditions, recommend seeing a doctor",
+      "- Use light emojis occasionally to feel warm, not excessive",
+      "- Address them by first name occasionally, never repeatedly",
+      "- Never invent macros for foods the user did not log",
+    ].join("\n");
 
     const cleaned = (body.messages ?? []).filter((m) => m.role !== "system");
 
