@@ -14,7 +14,237 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      food_logs: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string
+          date: string
+          emoji: string | null
+          fat: number
+          fibre: number
+          food_name: string
+          food_score: number | null
+          id: string
+          logged_at: string
+          meal_type: string
+          protein: number
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          date?: string
+          emoji?: string | null
+          fat?: number
+          fibre?: number
+          food_name: string
+          food_score?: number | null
+          id?: string
+          logged_at?: string
+          meal_type: string
+          protein?: number
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          date?: string
+          emoji?: string | null
+          fat?: number
+          fibre?: number
+          food_name?: string
+          food_score?: number | null
+          id?: string
+          logged_at?: string
+          meal_type?: string
+          protein?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activity_level: string | null
+          age: number | null
+          bmr: number | null
+          carbs_g: number | null
+          created_at: string
+          daily_calories: number | null
+          diet_preferences: string[] | null
+          email: string | null
+          fat_g: number | null
+          gender: string | null
+          goal: string | null
+          height_cm: number | null
+          id: string
+          name: string | null
+          onboarding_completed: boolean
+          protein_g: number | null
+          target_weight_kg: number | null
+          tdee: number | null
+          updated_at: string
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          activity_level?: string | null
+          age?: number | null
+          bmr?: number | null
+          carbs_g?: number | null
+          created_at?: string
+          daily_calories?: number | null
+          diet_preferences?: string[] | null
+          email?: string | null
+          fat_g?: number | null
+          gender?: string | null
+          goal?: string | null
+          height_cm?: number | null
+          id?: string
+          name?: string | null
+          onboarding_completed?: boolean
+          protein_g?: number | null
+          target_weight_kg?: number | null
+          tdee?: number | null
+          updated_at?: string
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          activity_level?: string | null
+          age?: number | null
+          bmr?: number | null
+          carbs_g?: number | null
+          created_at?: string
+          daily_calories?: number | null
+          diet_preferences?: string[] | null
+          email?: string | null
+          fat_g?: number | null
+          gender?: string | null
+          goal?: string | null
+          height_cm?: number | null
+          id?: string
+          name?: string | null
+          onboarding_completed?: boolean
+          protein_g?: number | null
+          target_weight_kg?: number | null
+          tdee?: number | null
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      streaks: {
+        Row: {
+          current_streak: number
+          id: string
+          last_logged_date: string | null
+          longest_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number
+          id?: string
+          last_logged_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_streak?: number
+          id?: string
+          last_logged_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      water_logs: {
+        Row: {
+          amount_ml: number
+          date: string
+          id: string
+          logged_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_ml: number
+          date?: string
+          id?: string
+          logged_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number
+          date?: string
+          id?: string
+          logged_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          id: string
+          logged_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          id?: string
+          logged_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          id?: string
+          logged_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
