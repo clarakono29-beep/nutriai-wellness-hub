@@ -1,0 +1,14 @@
+{
+  "name": "NutriAI — AI Nutrition Coach",
+  "short_name": "NutriAI",
+  "description": "AI-powered nutrition tracking that learns your body",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF7",
+  "theme_color": "#1C3A2A",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
