@@ -199,6 +199,10 @@ function Onboarding() {
       const trimmed = a.name.trim();
       return trimmed.length >= 2 ? `Nice to meet you, ${trimmed}` : "Continue";
     }
+    if (step === 10) return "This is incredible — what's next?";
+    if (step === 11) {
+      return demoResult ? "Continue to my personalised plan" : "Try the AI above to continue";
+    }
     if (step === TOTAL_STEPS) return "Open my dashboard";
     return "Continue";
   })();
