@@ -374,6 +374,11 @@ function Diary() {
 
       {/* Floating AI nutrition coach */}
       <CoachChat />
+
+      {/* Streak milestone celebration */}
+      {milestone && (
+        <StreakMilestoneModal milestone={milestone} onClose={clearMilestone} />
+      )}
     </div>
   );
 }
