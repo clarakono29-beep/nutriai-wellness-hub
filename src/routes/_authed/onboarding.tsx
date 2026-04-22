@@ -13,8 +13,9 @@ import {
 
 import { LeafMark, Wordmark } from "@/components/brand/Logo";
 import { PrimaryButton } from "@/components/ui/luxury/PrimaryButton";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock, Mic, Camera, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAI, type MealAnalysis } from "@/hooks/useAI";
 
 export const Route = createFileRoute("/_authed/onboarding")({
   head: () => ({ meta: [{ title: "Set up your profile — NutriAI" }] }),
