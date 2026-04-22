@@ -168,6 +168,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
     setFollowups([]);
     setInput("");
     setLoading(true);
+    stickToBottomRef.current = true; // a brand-new send always scrolls
 
     try {
       // Send only the last 10 messages for context window control
@@ -199,6 +200,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       }
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      setStreaming(true);
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -236,6 +238,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
                 }
                 return copy;
               });
+              scheduleScroll(true);
             }
           } catch {
             buf = line + "\n" + buf;
@@ -251,6 +254,7 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       appendAssistant("Network hiccup — try again.");
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   };
 
