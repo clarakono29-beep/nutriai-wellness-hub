@@ -504,7 +504,8 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
           (e as { name?: string }).name === "AbortError");
       if (!isAbort) {
         console.error(e);
-        appendAssistant("Network hiccup — try again.");
+        restoreStopMarker();
+        setContinueError("Network hiccup while resuming.");
       }
     } finally {
       abortRef.current = null;
