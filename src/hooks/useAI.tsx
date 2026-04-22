@@ -11,6 +11,17 @@ export interface MealAnalysis {
   food_score: number;
   verdict: string;
   emoji: string;
+  reasoning?: string;
+}
+
+interface AnalyseInput {
+  meal_description?: string;
+  image_base64?: string;
+  user_context?: {
+    goal?: string | null;
+    daily_calories?: number | null;
+    protein_target?: number | null;
+  };
 }
 
 export function useAI() {
@@ -18,10 +29,7 @@ export function useAI() {
   const [error, setError] = useState<string | null>(null);
 
   const analyseMeal = useCallback(
-    async (input: {
-      meal_description: string;
-      user_context?: { goal?: string | null; daily_calories?: number | null; protein_target?: number | null };
-    }): Promise<MealAnalysis | null> => {
+    async (input: AnalyseInput): Promise<MealAnalysis | null> => {
       setLoading(true);
       setError(null);
       try {
