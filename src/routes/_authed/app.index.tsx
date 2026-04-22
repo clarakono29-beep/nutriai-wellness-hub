@@ -1,17 +1,22 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useProfile } from "@/hooks/useProfile";
 import { useFoodLog, type FoodLog } from "@/hooks/useFoodLog";
 import { useAI, type MealAnalysis } from "@/hooks/useAI";
+import { useStreak } from "@/hooks/useStreak";
+import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { todayISO, fmtKcal } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { evaluateAchievements } from "@/lib/achievements";
 
 import { Pill } from "@/components/ui/luxury/Pill";
 import { CoachChat } from "@/components/coach/CoachChat";
+import { StreakMilestoneModal } from "@/components/gamification/StreakMilestoneModal";
+import { NotificationPrompt } from "@/components/gamification/NotificationPrompt";
 import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/app/")({
