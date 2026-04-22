@@ -548,7 +548,7 @@ function MacroLine({
   const stepX = w / Math.max(values.length - 1, 1);
   const points = values.map((v, i) => `${i * stepX},${h - (v / max) * (h - 6) - 3}`).join(" ");
   const targetY = h - (target / max) * (h - 6) - 3;
-  const today = values[values.length - 1] || values.findLast?.((v) => v > 0) || 0;
+  const today = [...values].reverse().find((v) => v > 0) ?? 0;
 
   return (
     <div className="flex items-center gap-3">
