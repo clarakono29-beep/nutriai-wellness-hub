@@ -108,11 +108,39 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
   const [followups, setFollowups] = useState<string[]>(initialQuickPrompts);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+  const rafScrollRef = useRef<number | null>(null);
+
+  // Track whether the user is near the bottom; if they scroll up, stop pinning.
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    stickToBottomRef.current = distanceFromBottom < 80;
+  };
+
+  // rAF-throttled smooth scroll. Only pin if user hasn't scrolled up.
+  const scheduleScroll = (smooth = true) => {
+    if (rafScrollRef.current !== null) return;
+    rafScrollRef.current = requestAnimationFrame(() => {
+      rafScrollRef.current = null;
+      const el = scrollRef.current;
+      if (!el || !stickToBottomRef.current) return;
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    });
+  };
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+    scheduleScroll(true);
+  }, [messages, loading, streaming]);
+
+  useEffect(() => {
+    return () => {
+      if (rafScrollRef.current !== null) cancelAnimationFrame(rafScrollRef.current);
+    };
+  }, []);
 
   const buildContext = () => {
     const summary =
