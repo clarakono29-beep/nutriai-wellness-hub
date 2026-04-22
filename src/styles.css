@@ -229,3 +229,17 @@
 .stagger > *:nth-child(6) { animation-delay: 400ms; }
 .stagger > *:nth-child(7) { animation-delay: 480ms; }
 .stagger > *:nth-child(8) { animation-delay: 560ms; }
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes float-y-delayed {
+  0%, 100% { transform: translateY(-4px); }
+  50% { transform: translateY(4px); }
+}
+.animate-float { animation: float-y 3s ease-in-out infinite; }
+.animate-float-delayed { animation: float-y-delayed 3.6s ease-in-out infinite; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
