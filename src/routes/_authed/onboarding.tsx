@@ -259,6 +259,19 @@ function Onboarding() {
       />
     );
   }
+  // Step 12 is a full-bleed paywall — its own layout, no top bar/progress.
+  if (step === TOTAL_STEPS) {
+    return (
+      <PaywallStep
+        name={a.name.trim() || "there"}
+        goal={a.goal}
+        plan={plan}
+        submitting={submitting}
+        onBack={goBack}
+        onActivate={finalize}
+      />
+    );
+  }
 
   return (
     <div className="mobile-shell flex flex-col min-h-[100dvh] bg-[color:var(--cream)]">
