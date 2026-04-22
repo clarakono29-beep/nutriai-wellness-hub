@@ -159,6 +159,14 @@ function Onboarding() {
         return !!a.goal;
       case 4:
         return a.name.trim().length >= 2;
+      case 5:
+        return !!a.gender;
+      case 6:
+        return a.age !== "" && a.height_cm !== "" && a.weight_kg !== "" && a.target_weight_kg !== "";
+      case 7:
+        return !!a.activity_level;
+      case 8:
+        return a.diet_preferences.length >= 1;
       default:
         return true;
     }
