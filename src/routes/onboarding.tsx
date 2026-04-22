@@ -1,12 +1,16 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Convenience redirect: /onboarding → /_authed/onboarding (auth-gated).
- * Beautiful URL for users without exposing the layout segment.
+ * Public /onboarding URL — checks auth then routes user to the right place.
  */
 export const Route = createFileRoute("/onboarding")({
-  beforeLoad: () => {
-    throw redirect({ to: "/app" }); // _authed.app.tsx will redirect to onboarding if not complete
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      throw redirect({ to: "/auth", search: { mode: "signin" as const } });
+    }
+    throw redirect({ to: "/app" as never });
   },
   component: () => null,
 });
