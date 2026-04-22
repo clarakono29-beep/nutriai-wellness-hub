@@ -652,23 +652,7 @@ function FoodRow({ log, onDelete }: { log: FoodLog; onDelete: () => void }) {
   );
 }
 
-function EmptyPlate() {
-  return (
-    <div className="mt-6 flex flex-col items-center text-center py-10">
-      <div className="relative h-24 w-24">
-        <div className="absolute inset-0 rounded-full bg-[color:var(--cream-dark)]" />
-        <div className="absolute inset-3 rounded-full border-2 border-dashed border-[color:var(--cream-border)]" />
-        <div className="absolute inset-0 grid place-items-center text-[28px]">🍽️</div>
-      </div>
-      <p className="mt-4 text-[14px] text-[color:var(--ink-mid)] max-w-[260px]">
-        Start logging to see your food here.
-      </p>
-      <p className="mt-1 text-[12px] text-[color:var(--ink-light)]">
-        Tip: type a meal in the bar below — Claude does the rest.
-      </p>
-    </div>
-  );
-}
+
 
 function ConfirmModal({
   preview,
