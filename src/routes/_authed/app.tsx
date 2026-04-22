@@ -22,13 +22,20 @@ export const Route = createFileRoute("/_authed/app")({
   component: AppLayout,
 });
 
-const tabs = [
+interface Tab {
+  to: "/app" | "/app/log" | "/app/progress" | "/app/programs" | "/app/profile";
+  label: string;
+  icon: typeof Home;
+  exact?: boolean;
+}
+
+const tabs: Tab[] = [
   { to: "/app", label: "Home", icon: Home, exact: true },
   { to: "/app/log", label: "Log", icon: Utensils },
   { to: "/app/progress", label: "Progress", icon: TrendingUp },
   { to: "/app/programs", label: "Programs", icon: BookOpen },
   { to: "/app/profile", label: "Profile", icon: User },
-] as const;
+];
 
 function AppLayout() {
   const location = useLocation();
