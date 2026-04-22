@@ -278,7 +278,31 @@ function Onboarding() {
             onChange={(name) => setA({ ...a, name })}
           />
         )}
-        {step >= 5 && step < TOTAL_STEPS && (
+        {step === 5 && (
+          <GenderStep
+            value={a.gender}
+            onChange={(g) => setA({ ...a, gender: g })}
+          />
+        )}
+        {step === 6 && (
+          <BodyStep
+            answers={a}
+            onChange={(patch) => setA({ ...a, ...patch })}
+          />
+        )}
+        {step === 7 && (
+          <ActivityStep
+            value={a.activity_level}
+            onChange={(v) => setA({ ...a, activity_level: v })}
+          />
+        )}
+        {step === 8 && (
+          <DietStep
+            selected={a.diet_preferences}
+            onChange={(prefs) => setA({ ...a, diet_preferences: prefs })}
+          />
+        )}
+        {step >= 9 && step < TOTAL_STEPS && (
           <PlaceholderStep step={step} onSkip={goNext} />
         )}
         {step === TOTAL_STEPS && (
