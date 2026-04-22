@@ -62,6 +62,16 @@ function SignInPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [bypassActive, setBypassActive] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const read = () =>
+      setBypassActive(window.localStorage.getItem("dev_bypass_auth") === "1");
+    read();
+    window.addEventListener("storage", read);
+    return () => window.removeEventListener("storage", read);
+  }, []);
 
   useEffect(() => {
     if (!loading && user) {
