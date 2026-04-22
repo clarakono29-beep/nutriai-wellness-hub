@@ -404,15 +404,18 @@ function CoachPanel({ onClose }: { onClose: () => void }) {
       });
 
       if (resp.status === 429) {
-        appendAssistant("I'm getting too many requests right now — try again in a moment.");
+        restoreStopMarker();
+        setContinueError("Too many requests right now — try again in a moment.");
         return;
       }
       if (resp.status === 402) {
-        appendAssistant("AI credits are exhausted. Top up in workspace settings to continue.");
+        restoreStopMarker();
+        setContinueError("AI credits are exhausted. Top up to continue.");
         return;
       }
       if (!resp.ok || !resp.body) {
-        appendAssistant("Couldn't resume — please try again.");
+        restoreStopMarker();
+        setContinueError("Couldn't resume the response.");
         return;
       }
 
