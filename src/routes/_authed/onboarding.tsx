@@ -247,6 +247,18 @@ function Onboarding() {
   if (step === 1) {
     return <WelcomeStep onBegin={goNext} />;
   }
+  // Step 9 is a full-bleed cinematic computation screen.
+  if (step === 9) {
+    return (
+      <CalculatingStep
+        answers={a}
+        onComplete={(p) => {
+          setPlan(p);
+          goNext();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="mobile-shell flex flex-col min-h-[100dvh] bg-[color:var(--cream)]">
