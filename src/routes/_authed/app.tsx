@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, redirect, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, ChefHat, NotebookPen, Plus, TrendingUp } from "lucide-react";
+import { BookOpen, CalendarDays, ChefHat, NotebookPen, Plus, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/ui/luxury/PageTransition";
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authed/app")({
 });
 
 interface Tab {
-  to: "/app" | "/app/progress" | "/app/programs" | "/app/recipes";
+  to: "/app" | "/app/progress" | "/app/mealplan" | "/app/recipes";
   label: string;
   icon: typeof NotebookPen;
   emoji: string;
@@ -59,7 +59,7 @@ const leftTabs: Tab[] = [
   { to: "/app/progress", label: "Progress", icon: TrendingUp, emoji: "📊" },
 ];
 const rightTabs: Tab[] = [
-  { to: "/app/programs", label: "Programs", icon: BookOpen, emoji: "🎯" },
+  { to: "/app/mealplan", label: "Plan", icon: CalendarDays, emoji: "🗓️" },
   { to: "/app/recipes", label: "Recipes", icon: ChefHat, emoji: "🍽️" },
 ];
 

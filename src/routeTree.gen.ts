@@ -25,6 +25,7 @@ import { Route as AuthedAppProgressRouteImport } from './routes/_authed/app.prog
 import { Route as AuthedAppProgramsRouteImport } from './routes/_authed/app.programs'
 import { Route as AuthedAppProfileRouteImport } from './routes/_authed/app.profile'
 import { Route as AuthedAppLogRouteImport } from './routes/_authed/app.log'
+import { Route as AuthedAppMealplanRouteImport } from './routes/_authed/app.mealplan'
 
 const SigninRoute = SigninRouteImport.update({
   id: '/signin',
@@ -105,6 +106,11 @@ const AuthedAppLogRoute = AuthedAppLogRouteImport.update({
   path: '/log',
   getParentRoute: () => AuthedAppRoute,
 } as any)
+const AuthedAppMealplanRoute = AuthedAppMealplanRouteImport.update({
+  id: '/mealplan',
+  path: '/mealplan',
+  getParentRoute: () => AuthedAppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthedAppRouteWithChildren
   '/onboarding': typeof AuthedOnboardingRoute
   '/app/log': typeof AuthedAppLogRoute
+  '/app/mealplan': typeof AuthedAppMealplanRoute
   '/app/profile': typeof AuthedAppProfileRoute
   '/app/programs': typeof AuthedAppProgramsRoute
   '/app/progress': typeof AuthedAppProgressRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/onboarding': typeof AuthedOnboardingRoute
   '/app/log': typeof AuthedAppLogRoute
+  '/app/mealplan': typeof AuthedAppMealplanRoute
   '/app/profile': typeof AuthedAppProfileRoute
   '/app/programs': typeof AuthedAppProgramsRoute
   '/app/progress': typeof AuthedAppProgressRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/_authed/app': typeof AuthedAppRouteWithChildren
   '/_authed/onboarding': typeof AuthedOnboardingRoute
   '/_authed/app/log': typeof AuthedAppLogRoute
+    '/_authed/app/mealplan': typeof AuthedAppMealplanRoute
   '/_authed/app/profile': typeof AuthedAppProfileRoute
   '/_authed/app/programs': typeof AuthedAppProgramsRoute
   '/_authed/app/progress': typeof AuthedAppProgressRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/onboarding'
     | '/app/log'
+    | '/app/mealplan'
     | '/app/profile'
     | '/app/programs'
     | '/app/progress'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/signin'
     | '/onboarding'
     | '/app/log'
+    | '/app/mealplan'
     | '/app/profile'
     | '/app/programs'
     | '/app/progress'
@@ -337,11 +348,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedAppLogRouteImport
       parentRoute: typeof AuthedAppRoute
     }
+    '/_authed/app/mealplan': {
+      id: '/_authed/app/mealplan'
+      path: '/mealplan'
+      fullPath: '/app/mealplan'
+      preLoaderRoute: typeof AuthedAppMealplanRouteImport
+      parentRoute: typeof AuthedAppRoute
+    }
   }
 }
 
 interface AuthedAppRouteChildren {
   AuthedAppLogRoute: typeof AuthedAppLogRoute
+  AuthedAppMealplanRoute: typeof AuthedAppMealplanRoute
   AuthedAppProfileRoute: typeof AuthedAppProfileRoute
   AuthedAppProgramsRoute: typeof AuthedAppProgramsRoute
   AuthedAppProgressRoute: typeof AuthedAppProgressRoute
@@ -351,6 +370,7 @@ interface AuthedAppRouteChildren {
 
 const AuthedAppRouteChildren: AuthedAppRouteChildren = {
   AuthedAppLogRoute: AuthedAppLogRoute,
+  AuthedAppMealplanRoute: AuthedAppMealplanRoute,
   AuthedAppProfileRoute: AuthedAppProfileRoute,
   AuthedAppProgramsRoute: AuthedAppProgramsRoute,
   AuthedAppProgressRoute: AuthedAppProgressRoute,
