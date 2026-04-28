@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      body_measurements: {
+        Row: {
+          body_fat_pct: number | null
+          id: string
+          logged_at: string
+          muscle_mass_kg: number | null
+          notes: string | null
+          user_id: string
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          body_fat_pct?: number | null
+          id?: string
+          logged_at?: string
+          muscle_mass_kg?: number | null
+          notes?: string | null
+          user_id: string
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          body_fat_pct?: number | null
+          id?: string
+          logged_at?: string
+          muscle_mass_kg?: number | null
+          notes?: string | null
+          user_id?: string
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      food_favourites: {
+        Row: {
+          created_at: string
+          emoji: string | null
+          fdc_id: number | null
+          food_name: string
+          id: string
+          per100_carbs: number | null
+          per100_fat: number | null
+          per100_fibre: number | null
+          per100_kcal: number | null
+          per100_protein: number | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string | null
+          fdc_id?: number | null
+          food_name: string
+          id?: string
+          per100_carbs?: number | null
+          per100_fat?: number | null
+          per100_fibre?: number | null
+          per100_kcal?: number | null
+          per100_protein?: number | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string | null
+          fdc_id?: number | null
+          food_name?: string
+          id?: string
+          per100_carbs?: number | null
+          per100_fat?: number | null
+          per100_fibre?: number | null
+          per100_kcal?: number | null
+          per100_protein?: number | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       food_logs: {
         Row: {
           calories: number
@@ -65,6 +143,60 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_plans: {
+        Row: {
+          budget: string | null
+          cooking_time: string | null
+          created_at: string
+          generated_at: string
+          id: string
+          plan: Json
+          user_id: string
+        }
+        Insert: {
+          budget?: string | null
+          cooking_time?: string | null
+          created_at?: string
+          generated_at?: string
+          id?: string
+          plan: Json
+          user_id: string
+        }
+        Update: {
+          budget?: string | null
+          cooking_time?: string | null
+          created_at?: string
+          generated_at?: string
+          id?: string
+          plan?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nutrition_insights: {
+        Row: {
+          generated_at: string
+          id: string
+          insights: Json
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          insights: Json
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          insights?: Json
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           activity_level: string | null
@@ -83,6 +215,7 @@ export type Database = {
           name: string | null
           onboarding_completed: boolean
           protein_g: number | null
+          stripe_customer_id: string | null
           target_weight_kg: number | null
           tdee: number | null
           updated_at: string
@@ -106,6 +239,7 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean
           protein_g?: number | null
+          stripe_customer_id?: string | null
           target_weight_kg?: number | null
           tdee?: number | null
           updated_at?: string
@@ -129,6 +263,7 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean
           protein_g?: number | null
+          stripe_customer_id?: string | null
           target_weight_kg?: number | null
           tdee?: number | null
           updated_at?: string
@@ -166,35 +301,47 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          cancel_at_period_end: boolean | null
           created_at: string
           current_period_end: string | null
           id: string
           plan: string | null
           status: string
           stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           stripe_subscription_id: string | null
+          trial_end: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean | null
           created_at?: string
           current_period_end?: string | null
           id?: string
           plan?: string | null
           status?: string
           stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           stripe_subscription_id?: string | null
+          trial_end?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean | null
           created_at?: string
           current_period_end?: string | null
           id?: string
           plan?: string | null
           status?: string
           stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           stripe_subscription_id?: string | null
+          trial_end?: string | null
           updated_at?: string
           user_id?: string
         }
