@@ -1,6 +1,7 @@
 import { Sparkles, ChevronRight } from "lucide-react";
 import type { MealSuggestion } from "@/lib/narrative";
 import { cn } from "@/lib/utils";
+import { haptics } from "@/lib/haptics";
 
 interface Props {
   suggestions: MealSuggestion[];
@@ -28,8 +29,8 @@ export function SmartSuggestions({ suggestions, onPick, className }: Props) {
         {suggestions.map((s, i) => (
           <button
             key={i}
-            onClick={() => onPick(s)}
-            className="snap-start shrink-0 w-[230px] text-left rounded-[18px] bg-white border border-[color:var(--cream-border)] hover:border-[color:var(--forest-mid)] shadow-elev-sm px-3.5 py-3 active:scale-[0.98] ease-luxury transition-all"
+            onClick={() => { haptics.tap(); onPick(s); }}
+            className="interactive-card snap-start shrink-0 w-[230px] text-left rounded-[18px] bg-white border border-[color:var(--cream-border)] hover:border-[color:var(--forest-mid)] hover:shadow-elev-md shadow-elev-sm px-3.5 py-3"
           >
             <div className="flex items-start gap-2.5">
               <div className="h-9 w-9 rounded-full bg-[color:var(--cream-dark)] grid place-items-center text-lg shrink-0">

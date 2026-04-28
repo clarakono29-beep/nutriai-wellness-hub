@@ -123,9 +123,9 @@ export function EditLogSheet({ log, onClose, onUpdated, onDeleted }: Props) {
               />
             </div>
             <button
-              onClick={onClose}
+              onClick={() => { haptics.light(); onClose(); }}
               aria-label="Close"
-              className="h-9 w-9 grid place-items-center rounded-full bg-[color:var(--cream-dark)] text-[color:var(--ink-mid)]"
+              className="interactive-icon h-9 w-9 grid place-items-center rounded-full bg-[color:var(--cream-dark)] text-[color:var(--ink-mid)]"
             >
               <X className="h-4 w-4" />
             </button>
@@ -148,9 +148,9 @@ export function EditLogSheet({ log, onClose, onUpdated, onDeleted }: Props) {
               {MEAL_TYPES.map((m) => (
                 <button
                   key={m}
-                  onClick={() => setMeal(m)}
+                  onClick={() => { if (meal !== m) haptics.light(); setMeal(m); }}
                   className={cn(
-                    "flex-1 h-9 rounded-full text-[12px] font-semibold capitalize transition-all ease-luxury",
+                    "interactive-chip flex-1 h-9 rounded-full text-[12px] font-semibold capitalize",
                     meal === m
                       ? "bg-white text-[color:var(--forest)] shadow-elev-sm"
                       : "text-[color:var(--ink-mid)]",
@@ -169,9 +169,9 @@ export function EditLogSheet({ log, onClose, onUpdated, onDeleted }: Props) {
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setServings((s) => Math.max(0.25, +(s - 0.25).toFixed(2)))}
+                onClick={() => { haptics.light(); setServings((s) => Math.max(0.25, +(s - 0.25).toFixed(2))); }}
                 aria-label="Smaller portion"
-                className="h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center active:scale-90 ease-luxury transition-transform"
+                className="interactive-icon h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -184,9 +184,9 @@ export function EditLogSheet({ log, onClose, onUpdated, onDeleted }: Props) {
                 </div>
               </div>
               <button
-                onClick={() => setServings((s) => Math.min(5, +(s + 0.25).toFixed(2)))}
+                onClick={() => { haptics.light(); setServings((s) => Math.min(5, +(s + 0.25).toFixed(2))); }}
                 aria-label="Larger portion"
-                className="h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center active:scale-90 ease-luxury transition-transform"
+                className="interactive-icon h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -198,7 +198,7 @@ export function EditLogSheet({ log, onClose, onUpdated, onDeleted }: Props) {
             <button
               onClick={remove}
               disabled={deleting || saving}
-              className="h-12 px-4 rounded-[16px] text-[13px] font-semibold text-[color:var(--coral)] hover:bg-[color:var(--coral-light)] inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="interactive-btn h-12 px-4 rounded-[16px] text-[13px] font-semibold text-[color:var(--coral)] hover:bg-[color:var(--coral-light)] inline-flex items-center gap-1.5"
             >
               {deleting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -210,7 +210,7 @@ export function EditLogSheet({ log, onClose, onUpdated, onDeleted }: Props) {
             <button
               onClick={save}
               disabled={saving || deleting}
-              className="flex-1 h-14 rounded-[16px] bg-gradient-cta text-white text-[15px] font-semibold shadow-elev-cta active:scale-[0.97] ease-luxury transition-transform disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              className="interactive-btn flex-1 h-14 rounded-[16px] bg-gradient-cta text-white text-[15px] font-semibold shadow-elev-cta hover:shadow-elev-lg inline-flex items-center justify-center gap-2"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

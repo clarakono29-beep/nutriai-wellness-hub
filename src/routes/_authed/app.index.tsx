@@ -239,7 +239,7 @@ function Diary() {
           <Link
             to="/app/profile"
             aria-label="Open profile"
-            className="h-10 w-10 rounded-full bg-[color:var(--forest)] text-white grid place-items-center font-display font-semibold text-[13px] shadow-elev-sm active:scale-95 ease-luxury transition-transform"
+            className="interactive-icon h-10 w-10 rounded-full bg-[color:var(--forest)] text-white grid place-items-center font-display font-semibold text-[13px] shadow-elev-sm hover:shadow-elev-md"
           >
             {(profile?.name ?? user?.email ?? "U")
               .split(/[\s@.]/)
@@ -341,8 +341,8 @@ function Diary() {
             {recents.map((r) => (
               <button
                 key={r.id}
-                onClick={() => relog(r)}
-                className="shrink-0 flex items-center gap-2 px-3 h-9 rounded-full bg-white border border-[color:var(--cream-border)] hover:border-[color:var(--forest-mid)] transition-colors text-[13px] text-[color:var(--ink)] active:scale-95 ease-luxury"
+                onClick={() => { haptics.tap(); relog(r); }}
+                className="interactive-chip shrink-0 flex items-center gap-2 px-3 h-9 rounded-full bg-white border border-[color:var(--cream-border)] hover:border-[color:var(--forest-mid)] text-[13px] text-[color:var(--ink)]"
               >
                 <span>{r.emoji ?? "🍽️"}</span>
                 <span className="max-w-[140px] truncate">{r.food_name}</span>
@@ -413,7 +413,7 @@ function Diary() {
             onClick={submitAI}
             disabled={!text.trim() || aiLoading}
             aria-label="Send to AI"
-            className="h-11 w-11 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-sm disabled:opacity-50 active:scale-95 ease-luxury transition-transform"
+            className="interactive-btn h-11 w-11 rounded-full bg-gradient-cta grid place-items-center text-white shadow-elev-sm hover:shadow-elev-md"
           >
             {aiLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -604,17 +604,17 @@ function WaterTracker({
       </div>
       <div className="flex flex-col gap-1 shrink-0">
         <button
-          onClick={onAdd}
+          onClick={() => { haptics.light(); onAdd(); }}
           aria-label="Add glass of water"
-          className="h-7 w-7 rounded-full border border-[color:var(--forest)] text-[color:var(--forest)] grid place-items-center active:scale-90 ease-luxury transition-transform"
+          className="interactive-icon h-7 w-7 rounded-full border border-[color:var(--forest)] text-[color:var(--forest)] grid place-items-center"
         >
           <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
         </button>
         <button
-          onClick={onRemove}
+          onClick={() => { haptics.light(); onRemove(); }}
           aria-label="Remove glass of water"
           disabled={glasses === 0}
-          className="h-7 w-7 rounded-full border border-[color:var(--cream-border)] text-[color:var(--ink-mid)] grid place-items-center disabled:opacity-40 active:scale-90 ease-luxury transition-transform"
+          className="interactive-icon h-7 w-7 rounded-full border border-[color:var(--cream-border)] text-[color:var(--ink-mid)] grid place-items-center"
         >
           <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
         </button>
@@ -770,9 +770,9 @@ function ConfirmModal({
               {MEAL_TYPES.map((m) => (
                 <button
                   key={m}
-                  onClick={() => onMealType(m)}
+                  onClick={() => { if (mealType !== m) haptics.light(); onMealType(m); }}
                   className={cn(
-                    "flex-1 h-9 rounded-full text-[12px] font-semibold capitalize transition-all ease-luxury",
+                    "interactive-chip flex-1 h-9 rounded-full text-[12px] font-semibold capitalize",
                     mealType === m
                       ? "bg-white text-[color:var(--forest)] shadow-elev-sm"
                       : "text-[color:var(--ink-mid)]",
@@ -791,8 +791,8 @@ function ConfirmModal({
             </p>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => onServings(Math.max(0.5, +(servings - 0.5).toFixed(1)))}
-                className="h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center active:scale-90 ease-luxury transition-transform"
+                onClick={() => { haptics.light(); onServings(Math.max(0.5, +(servings - 0.5).toFixed(1))); }}
+                className="interactive-icon h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center"
                 aria-label="Decrease servings"
               >
                 <Minus className="h-4 w-4" />
@@ -806,8 +806,8 @@ function ConfirmModal({
                 className="flex-1 h-12 text-center text-[18px] font-display font-semibold rounded-[14px] border border-[color:var(--cream-border)] bg-white outline-none focus:border-[color:var(--forest-mid)]"
               />
               <button
-                onClick={() => onServings(+(servings + 0.5).toFixed(1))}
-                className="h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center active:scale-90 ease-luxury transition-transform"
+                onClick={() => { haptics.light(); onServings(+(servings + 0.5).toFixed(1)); }}
+                className="interactive-icon h-10 w-10 rounded-full border border-[color:var(--cream-border)] grid place-items-center"
                 aria-label="Increase servings"
               >
                 <Plus className="h-4 w-4" />
@@ -819,14 +819,14 @@ function ConfirmModal({
           <div className="mt-6 flex gap-2">
             <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-[16px] text-[14px] font-semibold text-[color:var(--ink-mid)] hover:bg-[color:var(--cream-dark)]"
+              className="interactive-btn flex-1 h-12 rounded-[16px] text-[14px] font-semibold text-[color:var(--ink-mid)] hover:bg-[color:var(--cream-dark)]"
             >
               Adjust
             </button>
             <button
               onClick={onConfirm}
               disabled={submitting}
-              className="flex-[2] h-14 rounded-[16px] bg-gradient-cta text-white text-[15px] font-semibold shadow-elev-cta active:scale-[0.97] ease-luxury transition-transform disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              className="interactive-btn flex-[2] h-14 rounded-[16px] bg-gradient-cta text-white text-[15px] font-semibold shadow-elev-cta hover:shadow-elev-lg inline-flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
