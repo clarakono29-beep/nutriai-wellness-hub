@@ -6,6 +6,7 @@ import { ChevronDown, Plus, X, Flame, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { haptics } from "@/lib/haptics";
 
 export const Route = createFileRoute("/_authed/app/progress")({
   head: () => ({ meta: [{ title: "Progress — NutriAI" }] }),
@@ -183,19 +184,19 @@ function ProgressPage() {
         </div>
         <div className="relative">
           <button
-            onClick={() => setRangeOpen((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-[12px] border border-[color:var(--cream-border)] bg-white text-[13px] font-medium text-[color:var(--ink)]"
+            onClick={() => { haptics.light(); setRangeOpen((v) => !v); }}
+            className="interactive-chip flex items-center gap-1.5 px-3 py-2 rounded-[12px] border border-[color:var(--cream-border)] bg-white text-[13px] font-medium text-[color:var(--ink)]"
           >
             {RANGE_LABELS[range]}
-            <ChevronDown className="h-3.5 w-3.5 text-[color:var(--ink-light)]" />
+            <ChevronDown className={`h-3.5 w-3.5 text-[color:var(--ink-light)] transition-transform duration-200 ease-luxury ${rangeOpen ? "rotate-180" : ""}`} />
           </button>
           {rangeOpen && (
-            <div className="absolute right-0 top-[44px] z-30 w-44 bg-white rounded-[14px] border border-[color:var(--cream-border)] shadow-elev-md overflow-hidden">
+            <div className="absolute right-0 top-[44px] z-30 w-44 bg-white rounded-[14px] border border-[color:var(--cream-border)] shadow-elev-md overflow-hidden animate-scale-in origin-top-right">
               {(Object.keys(RANGE_LABELS) as Range[]).map((r) => (
                 <button
                   key={r}
-                  onClick={() => { setRange(r); setRangeOpen(false); }}
-                  className={`w-full text-left px-3.5 py-2.5 text-[13px] hover:bg-[color:var(--cream)] ${
+                  onClick={() => { haptics.light(); setRange(r); setRangeOpen(false); }}
+                  className={`interactive-chip w-full text-left px-3.5 py-2.5 text-[13px] hover:bg-[color:var(--cream)] ${
                     r === range ? "text-[color:var(--forest)] font-semibold" : "text-[color:var(--ink-mid)]"
                   }`}
                 >
@@ -286,8 +287,8 @@ function ProgressPage() {
         <div className="flex items-center justify-between">
           <h4 className="font-body font-semibold text-[14px]">Weight</h4>
           <button
-            onClick={() => setShowWeightModal(true)}
-            className="flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-full bg-[color:var(--forest)] text-white"
+            onClick={() => { haptics.tap(); setShowWeightModal(true); }}
+            className="interactive-btn flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-full bg-[color:var(--forest)] text-white hover:shadow-elev-sm"
           >
             <Plus className="h-3.5 w-3.5" /> Log weight
           </button>
@@ -323,8 +324,8 @@ function ProgressPage() {
           <div className="py-8 text-center">
             <p className="text-[14px] text-[color:var(--ink-mid)] mb-4">Log your weight to track progress</p>
             <button
-              onClick={() => setShowWeightModal(true)}
-              className="px-5 py-3 rounded-[14px] bg-gradient-cta text-white font-semibold text-[14px] shadow-elev-sm"
+              onClick={() => { haptics.tap(); setShowWeightModal(true); }}
+              className="interactive-btn px-5 py-3 rounded-[14px] bg-gradient-cta text-white font-semibold text-[14px] shadow-elev-sm hover:shadow-elev-md"
             >
               + Log Weight
             </button>
@@ -363,7 +364,7 @@ function ProgressPage() {
               <span className="text-[11px] uppercase tracking-widest text-[color:var(--ink-light)] font-semibold">
                 {new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
               </span>
-              <button onClick={() => setShowWeightModal(false)} className="text-[color:var(--ink-light)]">
+              <button onClick={() => { haptics.light(); setShowWeightModal(false); }} aria-label="Close" className="interactive-icon h-9 w-9 grid place-items-center rounded-full text-[color:var(--ink-light)]">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -385,7 +386,7 @@ function ProgressPage() {
             <button
               onClick={logWeight}
               disabled={submitting || !newWeight}
-              className="mt-7 w-full h-[54px] rounded-[16px] bg-gradient-cta text-white font-semibold text-[15px] shadow-elev-cta active:scale-[0.98] disabled:opacity-50"
+              className="interactive-btn mt-7 w-full h-[54px] rounded-[16px] bg-gradient-cta text-white font-semibold text-[15px] shadow-elev-cta hover:shadow-elev-lg"
             >
               {submitting ? "Saving…" : "Save"}
             </button>
@@ -507,8 +508,8 @@ function CalorieBars({
           return (
             <button
               key={i}
-              onClick={() => setActiveBar(isActive ? null : i)}
-              className="relative flex-1 h-full flex flex-col justify-end items-center group"
+              onClick={() => { haptics.light(); setActiveBar(isActive ? null : i); }}
+              className="relative flex-1 h-full flex flex-col justify-end items-center group ease-luxury transition-transform active:scale-[0.96]"
             >
               {isActive && t.calories > 0 && (
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full bg-[color:var(--ink)] text-white text-[11px] font-medium rounded-md px-2 py-1 whitespace-nowrap z-10">
