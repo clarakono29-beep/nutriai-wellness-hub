@@ -318,6 +318,19 @@ function Diary() {
       {/* Water tracker */}
       <WaterTracker glasses={waterGlasses} onAdd={() => adjustWater(1)} onRemove={() => adjustWater(-1)} />
 
+      {/* Smart suggestions — based on remaining macros + time of day */}
+      <SmartSuggestions
+        suggestions={buildMealSuggestions({
+          caloriesRemaining: remaining,
+          proteinRemaining: Math.max(0, (profile?.protein_g ?? 100) - totals.protein),
+          diet: profile?.diet_preferences,
+        })}
+        onPick={(s) => {
+          setText(s.prompt);
+          haptics.light();
+        }}
+      />
+
       {/* Recents */}
       {recents.length > 0 && (
         <div className="mt-6">
