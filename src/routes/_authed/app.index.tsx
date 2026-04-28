@@ -65,6 +65,7 @@ function Diary() {
   const [servings, setServings] = useState(1);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const [editing, setEditing] = useState<FoodLog | null>(null);
   const goalCelebratedRef = useRef(false);
 
   // Load water for today
