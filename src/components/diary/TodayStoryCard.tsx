@@ -62,7 +62,7 @@ export function TodayStoryCard({
   return (
     <div
       className={cn(
-        "rounded-[24px] bg-gradient-card border border-[color:var(--cream-border)] shadow-elev-sm p-5",
+        "rounded-[24px] bg-gradient-card border border-[color:var(--cream-border)] shadow-elev-sm p-5 transition-shadow duration-300 ease-luxury hover:shadow-elev-md",
         className,
       )}
     >
