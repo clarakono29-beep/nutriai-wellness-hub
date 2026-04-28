@@ -103,7 +103,7 @@ function DayCard({
   const title = kind === "best" ? "Closest to target" : "Toughest day";
   return (
     <div
-      className="rounded-[18px] bg-white border border-[color:var(--cream-border)] p-4 shadow-elev-sm"
+      className="rounded-[18px] bg-white border border-[color:var(--cream-border)] p-4 shadow-elev-sm transition-all duration-300 ease-luxury hover:-translate-y-0.5 hover:shadow-elev-md"
       style={{ borderLeft: `4px solid ${accent}` }}
     >
       <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-semibold" style={{ color: accent }}>

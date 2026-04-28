@@ -60,7 +60,7 @@ export function TodayPaceCard({
   return (
     <div
       className={cn(
-        "rounded-[20px] bg-white border border-[color:var(--cream-border)] p-5 shadow-elev-sm",
+        "rounded-[20px] bg-white border border-[color:var(--cream-border)] p-5 shadow-elev-sm transition-shadow duration-300 ease-luxury hover:shadow-elev-md",
         className,
       )}
     >
