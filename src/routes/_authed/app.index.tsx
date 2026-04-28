@@ -265,6 +265,24 @@ function Diary() {
         </div>
       )}
 
+      {/* Today's story narrative */}
+      <TodayStoryCard
+        className="mt-5"
+        story={buildDiaryStory({
+          firstName: profile?.name?.split(" ")[0],
+          caloriesEaten: totals.calories,
+          calorieTarget: target,
+          proteinEaten: totals.protein,
+          proteinTarget: profile?.protein_g ?? 100,
+          waterGlasses,
+          waterTargetGlasses: WATER_TARGET_GLASSES,
+          streakDays: streak.current_streak,
+        })}
+        caloriesEaten={totals.calories}
+        calorieTarget={target}
+        streakDays={streak.current_streak}
+      />
+
       {/* Calorie ring card */}
       <div className="mt-5 rounded-[28px] bg-white shadow-elev-sm border border-[color:var(--cream-border)] p-7 flex flex-col items-center">
         <CalorieRing eaten={totals.calories} target={target} remaining={remaining} pct={ringPct} />
