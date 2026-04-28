@@ -352,19 +352,84 @@
   border-radius: 12px;
 }
 
-/* Press / tap micro-interactions */
-.press-scale {
-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+/* ──────────────────────────────────────────────────────────
+ * Interaction layer — unified motion + press feedback.
+ * ease-luxury: shared timing curve across diary & progress.
+ * Use:
+ *   .interactive-btn   → primary buttons / CTAs
+ *   .interactive-chip  → pills, segmented controls, suggestions
+ *   .interactive-card  → larger tap targets / sheet rows
+ *   .interactive-icon  → icon-only round buttons
+ * Respects prefers-reduced-motion.
+ * ────────────────────────────────────────────────────────── */
+.ease-luxury { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+
+.interactive-btn,
+.interactive-chip,
+.interactive-card,
+.interactive-icon {
+  transition:
+    transform 160ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-.press-scale:active {
-  transform: scale(0.97);
+
+.interactive-btn:hover   { transform: translateY(-1px); }
+.interactive-btn:active  { transform: translateY(0) scale(0.97); transition-duration: 90ms; }
+
+.interactive-chip:hover  { transform: translateY(-1px); }
+.interactive-chip:active { transform: scale(0.94); transition-duration: 90ms; }
+
+.interactive-card:hover  { transform: translateY(-2px); }
+.interactive-card:active { transform: translateY(0) scale(0.985); transition-duration: 90ms; }
+
+.interactive-icon:hover  { background-color: color-mix(in oklab, var(--cream-dark) 80%, white); }
+.interactive-icon:active { transform: scale(0.9); transition-duration: 80ms; }
+
+.interactive-btn:focus-visible,
+.interactive-chip:focus-visible,
+.interactive-card:focus-visible,
+.interactive-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--forest) 30%, transparent);
 }
-.tap-card {
-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+.interactive-btn:disabled,
+.interactive-chip:disabled,
+.interactive-card:disabled,
+.interactive-icon:disabled {
+  transform: none !important;
+  cursor: not-allowed;
+  opacity: 0.55;
 }
-.tap-card:active {
-  transform: scale(0.985);
+
+@media (prefers-reduced-motion: reduce) {
+  .interactive-btn,
+  .interactive-chip,
+  .interactive-card,
+  .interactive-icon {
+    transition: background-color 120ms linear, color 120ms linear, border-color 120ms linear;
+  }
+  .interactive-btn:hover,
+  .interactive-btn:active,
+  .interactive-chip:hover,
+  .interactive-chip:active,
+  .interactive-card:hover,
+  .interactive-card:active,
+  .interactive-icon:hover,
+  .interactive-icon:active { transform: none; }
 }
+
+/* Legacy aliases — kept so existing usages continue to work */
+.press-scale { transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+.press-scale:active { transform: scale(0.97); }
+.tap-card { transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1); }
+.tap-card:active { transform: scale(0.985); }
 
 /* Smooth scrolling everywhere + snap utility */
 html { scroll-behavior: smooth; }
