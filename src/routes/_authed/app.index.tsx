@@ -14,12 +14,17 @@ import { cn } from "@/lib/utils";
 import { evaluateAchievements } from "@/lib/achievements";
 import { haptics } from "@/lib/haptics";
 
-import { Pill } from "@/components/ui/luxury/Pill";
 import { CoachChat } from "@/components/coach/CoachChat";
 import { StreakMilestoneModal } from "@/components/gamification/StreakMilestoneModal";
 import { NotificationPrompt } from "@/components/gamification/NotificationPrompt";
 import { Confetti } from "@/components/ui/luxury/Confetti";
 import { EmptyState } from "@/components/ui/luxury/EmptyState";
+import { TodayStoryCard } from "@/components/diary/TodayStoryCard";
+import { SmartSuggestions } from "@/components/diary/SmartSuggestions";
+import { MacroBudgetMeter } from "@/components/diary/MacroBudgetMeter";
+import { EditLogSheet } from "@/components/diary/EditLogSheet";
+import { buildDiaryStory, buildMealSuggestions } from "@/lib/narrative";
+import { Pill } from "@/components/ui/luxury/Pill";
 import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/app/")({
@@ -60,6 +65,7 @@ function Diary() {
   const [servings, setServings] = useState(1);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const [editing, setEditing] = useState<FoodLog | null>(null);
   const goalCelebratedRef = useRef(false);
 
   // Load water for today
@@ -259,6 +265,24 @@ function Diary() {
         </div>
       )}
 
+      {/* Today's story narrative */}
+      <TodayStoryCard
+        className="mt-5"
+        story={buildDiaryStory({
+          firstName: profile?.name?.split(" ")[0],
+          caloriesEaten: totals.calories,
+          calorieTarget: target,
+          proteinEaten: totals.protein,
+          proteinTarget: profile?.protein_g ?? 100,
+          waterGlasses,
+          waterTargetGlasses: WATER_TARGET_GLASSES,
+          streakDays: streak.current_streak,
+        })}
+        caloriesEaten={totals.calories}
+        calorieTarget={target}
+        streakDays={streak.current_streak}
+      />
+
       {/* Calorie ring card */}
       <div className="mt-5 rounded-[28px] bg-white shadow-elev-sm border border-[color:var(--cream-border)] p-7 flex flex-col items-center">
         <CalorieRing eaten={totals.calories} target={target} remaining={remaining} pct={ringPct} />
@@ -293,6 +317,19 @@ function Diary() {
 
       {/* Water tracker */}
       <WaterTracker glasses={waterGlasses} onAdd={() => adjustWater(1)} onRemove={() => adjustWater(-1)} />
+
+      {/* Smart suggestions — based on remaining macros + time of day */}
+      <SmartSuggestions
+        suggestions={buildMealSuggestions({
+          caloriesRemaining: remaining,
+          proteinRemaining: Math.max(0, (profile?.protein_g ?? 100) - totals.protein),
+          diet: profile?.diet_preferences,
+        })}
+        onPick={(s) => {
+          setText(s.prompt);
+          haptics.light();
+        }}
+      />
 
       {/* Recents */}
       {recents.length > 0 && (
