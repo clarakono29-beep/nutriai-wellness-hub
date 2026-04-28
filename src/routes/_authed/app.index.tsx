@@ -24,7 +24,8 @@ import { SmartSuggestions } from "@/components/diary/SmartSuggestions";
 import { MacroBudgetMeter } from "@/components/diary/MacroBudgetMeter";
 import { EditLogSheet } from "@/components/diary/EditLogSheet";
 import { buildDiaryStory, buildMealSuggestions } from "@/lib/narrative";
-import { Minus, Plus, Send, Loader2, Check } from "lucide-react";
+import { Pill } from "@/components/ui/luxury/Pill";
+import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/app/")({
   head: () => ({ meta: [{ title: "Diary — NutriAI" }] }),
