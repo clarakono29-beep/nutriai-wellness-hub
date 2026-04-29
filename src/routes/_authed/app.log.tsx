@@ -465,7 +465,7 @@ function ConfirmSheet({ preview, initialMeal, date, onClose, onLogged }: { previ
             <div className="relative h-[60px] w-[60px] shrink-0">
               <svg width={60} height={60} className="-rotate-90">
                 <circle cx={30} cy={30} r={26} fill="none" stroke="var(--cream-border)" strokeWidth={4} />
-                <circle cx={30} cy={30} r={26} fill="none" stroke={c.fg.startsWith("var") ? c.fg : c.fg} strokeWidth={4} strokeLinecap="round" strokeDasharray={2 * Math.PI * 26} strokeDashoffset={2 * Math.PI * 26 * (1 - preview.food_score / 10)} style={{ transition: "stroke-dashoffset 700ms ease" }} />
+                <circle cx={30} cy={30} r={26} fill="none" strokeWidth={4} strokeLinecap="round" strokeDasharray={2 * Math.PI * 26} strokeDashoffset={2 * Math.PI * 26 * (1 - preview.food_score / 10)} style={{ stroke: c.fg, transition: "stroke-dashoffset 700ms ease" }} />
               </svg>
               <div className="absolute inset-0 grid place-items-center font-display font-bold text-[20px]" style={{ color: c.fg }}>{preview.food_score}</div>
             </div>

@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, redirect, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookOpen, CalendarDays, ChefHat, NotebookPen, Plus, TrendingUp } from "lucide-react";
+import { CalendarDays, ChefHat, NotebookPen, Plus, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/ui/luxury/PageTransition";
@@ -39,7 +39,10 @@ export const Route = createFileRoute("/_authed/app")({
       sub &&
       ["active", "trialing", "past_due"].includes(sub.status) &&
       (!sub.current_period_end || new Date(sub.current_period_end).getTime() > Date.now());
-    if (!active) {
+    // Allow through if returning from Stripe checkout — webhook may not have fired yet.
+    // The diary page will detect ?checkout=success and show the welcome screen.
+    const returningFromCheckout = location.href.includes("checkout=success");
+    if (!active && !returningFromCheckout) {
       throw redirect({ to: "/renewal" });
     }
   },

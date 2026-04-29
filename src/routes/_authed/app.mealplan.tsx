@@ -10,13 +10,13 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/lib/haptics";
 import { PrimaryButton } from "@/components/ui/luxury/PrimaryButton";
+import { todayISO } from "@/lib/format";
 
 export const Route = createFileRoute("/_authed/app/mealplan")({
   head: () => ({ meta: [{ title: "Meal Plan — NutriAI" }] }),
   component: MealPlanPage,
 });
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 const MEAL_EMOJIS: Record<string, string> = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍎" };
 
@@ -241,7 +241,7 @@ function DayView({ day, onMealPress }: { day: MealPlanDay; onMealPress: (meal: M
 }
 
 function MealDetailModal({ meal, label, onClose }: { meal: MealItem; label: string; onClose: () => void }) {
-  const { addLog } = useFoodLog();
+  const { addLog } = useFoodLog(todayISO());
 
   const logMeal = async () => {
     await addLog({

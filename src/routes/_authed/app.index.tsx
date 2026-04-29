@@ -7,6 +7,7 @@ import { useFoodLog, type FoodLog } from "@/hooks/useFoodLog";
 import { useAI, type MealAnalysis } from "@/hooks/useAI";
 import { useStreak } from "@/hooks/useStreak";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { todayISO, fmtKcal } from "@/lib/format";
@@ -56,6 +57,25 @@ function Diary() {
   const { analyseMeal, loading: aiLoading } = useAI();
   const { streak, milestone, clearMilestone, recordDailyActivity } = useStreak();
   const { shouldShowPrompt, requestPermission, dismissPrompt } = useNotifications();
+  const { refresh: refreshSubscription } = useSubscription();
+
+  // Detect return from Stripe checkout and welcome the user
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      // Remove query param from URL without reload
+      window.history.replaceState({}, "", "/app");
+      toast.success("🎉 Welcome to Pro! Your trial has started.", { duration: 6000 });
+      // Poll for webhook to sync subscription — retry a few times
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        await refreshSubscription();
+        if (attempts >= 5) clearInterval(poll);
+      }, 2000);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [waterGlasses, setWaterGlasses] = useState(0);
   const [text, setText] = useState("");

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useNutritionInsights } from "@/hooks/useNutritionInsights";
+import { useNutritionInsights, type NutritionInsightsResult } from "@/hooks/useNutritionInsights";
 import { haptics } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 
@@ -347,7 +347,7 @@ function ProgressPage() {
 
 // ─── AI Insights Panel ───────────────────────────────────────────────
 
-function AIInsightsPanel({ insights }: { insights: ReturnType<typeof useNutritionInsights>["insights"] & object }) {
+function AIInsightsPanel({ insights }: { insights: NutritionInsightsResult }) {
   if (!insights) return null;
   return (
     <div className="space-y-3">
@@ -359,7 +359,7 @@ function AIInsightsPanel({ insights }: { insights: ReturnType<typeof useNutritio
       </div>
 
       {/* Highlights */}
-      {insights.highlights.map((h: { icon: string; title: string; body: string }, i: number) => (
+      {insights.highlights.map((h, i: number) => (
         <div key={i} className="bg-white rounded-[16px] border border-[color:var(--cream-border)] p-4 flex gap-3 shadow-elev-sm">
           <span className="text-[22px] leading-none mt-0.5">{h.icon}</span>
           <div>

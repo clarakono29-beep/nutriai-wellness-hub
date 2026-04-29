@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface NutritionInsight {
+export export interface NutritionInsight {
   icon: string;
   title: string;
   body: string;

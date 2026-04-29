@@ -112,11 +112,20 @@ function ProfilePage() {
     navigate({ to: "/" });
   };
 
-  const handleManageSubscription = () => {
-    // Stripe Customer Portal placeholder
-    toast.message("Subscription management coming soon", {
-      description: "We'll open the Stripe Customer Portal here.",
-    });
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal", {
+        body: { returnUrl: `${window.location.origin}/app/profile` },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error("Could not open billing portal. Please try again.");
+      }
+    } catch {
+      toast.error("Billing portal unavailable. Contact support.");
+    }
   };
 
   const handleDeleteAccount = async () => {
