@@ -22,8 +22,6 @@ import { Confetti } from "@/components/ui/luxury/Confetti";
 import { EmptyState } from "@/components/ui/luxury/EmptyState";
 import { TodayStoryCard } from "@/components/diary/TodayStoryCard";
 import { SmartSuggestions } from "@/components/diary/SmartSuggestions";
-import { MacroBudgetMeter } from "@/components/diary/MacroBudgetMeter";
-import { EditLogSheet } from "@/components/diary/EditLogSheet";
 import { buildDiaryStory, buildMealSuggestions } from "@/lib/narrative";
 import { Pill } from "@/components/ui/luxury/Pill";
 import { Flame, Minus, Plus, Send, Trash2, Loader2, Check } from "lucide-react";
@@ -62,18 +60,21 @@ function Diary() {
   // Detect return from Stripe checkout and welcome the user
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success") {
-      // Remove query param from URL without reload
-      window.history.replaceState({}, "", "/app");
-      toast.success("🎉 Welcome to Pro! Your trial has started.", { duration: 6000 });
-      // Poll for webhook to sync subscription — retry a few times
-      let attempts = 0;
-      const poll = setInterval(async () => {
-        attempts++;
-        await refreshSubscription();
-        if (attempts >= 5) clearInterval(poll);
-      }, 2000);
-    }
+    if (params.get("checkout") !== "success") return;
+
+    // Remove query param from URL without reload
+    window.history.replaceState({}, "", "/app");
+    toast.success("🎉 Welcome to Pro! Your trial has started.", { duration: 6000 });
+
+    // Poll for webhook to sync subscription — retry a few times
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts++;
+      await refreshSubscription();
+      if (attempts >= 5) clearInterval(poll);
+    }, 2000);
+
+    return () => clearInterval(poll);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -85,7 +86,6 @@ function Diary() {
   const [servings, setServings] = useState(1);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
-  const [editing, setEditing] = useState<FoodLog | null>(null);
   const goalCelebratedRef = useRef(false);
 
   // Load water for today

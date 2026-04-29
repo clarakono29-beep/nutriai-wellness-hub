@@ -234,8 +234,8 @@ function Onboarding() {
         onboarding_completed: true,
       });
       if (error) throw error;
-      toast.success("Profile complete. Let's eat.");
-      navigate({ to: "/app" });
+      toast.success("Profile complete. One last step — choose your plan.");
+      navigate({ to: "/pricing" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
