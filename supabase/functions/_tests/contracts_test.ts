@@ -288,6 +288,7 @@ Deno.test("stripe-webhook rejects missing signature", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ type: "test" }),
   });
+  await res.body?.cancel(); // drain to avoid leak
   // Should fail signature verification (400) or be unconfigured (500)
   assert([400, 401, 500].includes(res.status), `got ${res.status}`);
 });
