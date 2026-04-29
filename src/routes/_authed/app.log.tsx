@@ -188,7 +188,7 @@ function SearchTab({ onResult }: { onResult: (r: MealAnalysis) => void }) {
   const [selected, setSelected] = useState<USDAFood | null>(null);
   const [favs, setFavs] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); } catch { return []; } });
   const [recents, setRecents] = useState<USDAFood[]>(() => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; } });
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleQuery = (val: string) => {
     setQ(val); clearTimeout(timer.current);
@@ -309,7 +309,7 @@ function BarcodeTab({ onResult }: { onResult: (r: MealAnalysis) => void }) {
   const { lookupBarcode } = useFoodSearch();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const scanRef = useRef<ReturnType<typeof setInterval>>();
+  const scanRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const [scanning, setScanning] = useState(false);
   const [looking, setLooking] = useState(false);
   const [product, setProduct] = useState<BarcodeProduct | null>(null);
