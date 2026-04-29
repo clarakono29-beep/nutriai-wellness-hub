@@ -200,7 +200,7 @@ Deno.test("generate-meal-plan returns 7 days with all meals", async () => {
     assertExists(d.dinner);
     assertExists(d.totals);
   }
-}, { sanitizeOps: false, sanitizeResources: false });
+});
 
 /* ---------------- nutrition-insights: weekly review ---------------- */
 Deno.test("nutrition-insights returns insights for week data", async () => {
