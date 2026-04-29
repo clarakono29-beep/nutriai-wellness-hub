@@ -113,7 +113,6 @@ Deno.test("food-search returns array of normalised foods", async () => {
   const { res, json } = await invoke("food-search", {
     body: { query: "chicken breast" },
   });
-  // Accept either success or graceful 500 if USDA key is absent
   if (res.status !== 200) {
     assertExists((json as any)?.error, "non-200 must include error");
     return;
@@ -122,9 +121,10 @@ Deno.test("food-search returns array of normalised foods", async () => {
   assert(Array.isArray(results), "expected results array");
   if (results.length > 0) {
     const f = results[0];
-    assertExists(f.name ?? f.description);
-    assert(typeof f.calories === "number");
-    assert(typeof f.protein === "number");
+    assertExists(f.name ?? f.description, "missing name");
+    assertExists(f.per100, "missing per100 macros");
+    assert(typeof f.per100.kcal === "number", "per100.kcal must be number");
+    assert(typeof f.per100.protein === "number", "per100.protein must be number");
   }
 });
 
@@ -136,9 +136,11 @@ Deno.test("barcode-lookup returns product or not-found for known EAN", async () 
   });
   assert([200, 404].includes(res.status), `unexpected ${res.status}`);
   if (res.status === 200) {
-    const product = (json as any)?.product ?? json;
+    const j = json as any;
+    const product = j?.product ?? j;
     assertExists(product?.name, "missing product name");
-    assert(typeof product.calories === "number");
+    assertExists(product?.per100, "missing per100 macros");
+    assert(typeof product.per100.kcal === "number", "per100.kcal must be number");
   }
 });
 
